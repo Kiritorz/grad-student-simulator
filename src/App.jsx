@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Ghost, Link as LinkIcon, Target } from 'lucide-react';
+import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Ghost, Link as LinkIcon, Target, Github } from 'lucide-react';
 
 // --- 游戏配置 ---
 const MAX_TURNS = 36; // 36个月 (3年制)
@@ -909,7 +909,12 @@ const GradStudentSimulator = () => {
 
           {/* Title & Info */}
           <div className="flex flex-col min-w-0">
-             <h1 className={`font-extrabold text-sm md:text-lg leading-tight truncate ${isAnomaly ? 'text-purple-200' : 'text-slate-800'}`}>研究生模拟器</h1>
+             <div className="flex items-center gap-2">
+                <h1 className={`font-extrabold text-sm md:text-lg leading-tight truncate ${isAnomaly ? 'text-purple-200' : 'text-slate-800'}`}>研究生模拟器</h1>
+                <a href="https://github.com/Kiritorz/grad-student-simulator" target="_blank" rel="noopener noreferrer" className={`opacity-80 md:hover:opacity-100 transition-opacity ${isAnomaly ? 'text-purple-300' : 'text-slate-400 hover:text-slate-700'}`}>
+                  <Github size={14} />
+                </a>
+             </div>
              <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-xs font-medium mt-0.5">
                 <div className={`px-1.5 py-0.5 rounded-full flex items-center gap-1 ${isAnomaly ? 'bg-purple-900/50 text-purple-300' : 'bg-slate-100 text-slate-500'}`}>
                   <Clock size={10} className={isAnomaly ? 'text-purple-400' : 'text-indigo-600'}/> 
@@ -986,7 +991,7 @@ const GradStudentSimulator = () => {
                       <button 
                         key={trait.id}
                         onClick={() => applyTrait(trait)}
-                        className="bg-white p-4 md:p-5 rounded-2xl border-2 border-slate-100 md:hover:border-indigo-300 md:hover:shadow-lg transition-all text-left group relative overflow-hidden flex flex-col h-full active:scale-95 md:active:scale-100"
+                        className="bg-white p-4 md:p-5 rounded-2xl border-2 border-slate-100 md:hover:border-indigo-300 md:hover:shadow-lg transition-all text-left group relative overflow-hidden flex flex-col h-full md:active:scale-100"
                       >
                          <div className={`absolute top-0 right-0 w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br ${trait.color} opacity-10 rounded-bl-full group-hover:scale-110 transition-transform`}></div>
                          <div className={`w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br ${trait.color} text-white flex items-center justify-center mb-3 shadow-md shrink-0`}>
@@ -1015,7 +1020,7 @@ const GradStudentSimulator = () => {
                 </div>
                 <button 
                   onClick={startGame}
-                  className="w-full bg-slate-900 md:hover:bg-slate-800 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95 md:active:scale-100"
+                  className="w-full bg-slate-900 md:hover:bg-slate-800 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 md:active:scale-100"
                 >
                   <BookOpen size={20} />
                   开始研一生活
@@ -1056,14 +1061,14 @@ const GradStudentSimulator = () => {
                   );
               })()}
 
-              {/* 选项区域 */}
-              <div className="flex flex-col gap-2 mt-auto min-h-[260px] md:min-h-[180px] justify-end pb-12 md:pb-0">
+              {/* 选项区域 - 增加 pb-6 防止底部遮挡 */}
+              <div className="flex flex-col gap-2 mt-auto min-h-[260px] md:min-h-[180px] justify-end pb-6 md:pb-0">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
                     {currentEvent.choices.map((choice, idx) => (
                     <button
                         key={idx}
                         onClick={() => handleChoice(choice, idx)}
-                        className={`h-full border-2 p-3 md:p-5 rounded-2xl text-left transition-all duration-200 md:hover:-translate-y-1 shadow-sm md:hover:shadow-md group relative overflow-hidden flex flex-col justify-between active:scale-[0.98] md:active:scale-100 
+                        className={`h-full border-2 p-3 md:p-5 rounded-2xl text-left transition-all duration-200 md:hover:-translate-y-1 shadow-sm md:hover:shadow-md group relative overflow-hidden flex flex-col justify-between md:active:scale-100 
                         ${isAnomaly 
                             ? 'bg-slate-800 border-purple-800 md:hover:border-purple-500 md:hover:bg-slate-700' 
                             : `bg-white md:hover:bg-slate-50 border-slate-100 md:hover:border-indigo-200 ${choice.hasRandom ? 'border-indigo-50/50' : ''}`
@@ -1092,7 +1097,7 @@ const GradStudentSimulator = () => {
                 {currentEvent.gambleOption ? (
                     <button
                         onClick={() => handleChoice(currentEvent.gambleOption, 999, true)}
-                        className="bg-gradient-to-r from-violet-600 to-indigo-600 md:hover:from-violet-500 md:hover:to-indigo-500 text-white p-4 rounded-xl shadow-lg md:hover:shadow-indigo-200 transition-all flex items-center justify-between group relative overflow-hidden shrink-0 active:scale-[0.98] md:active:scale-100"
+                        className="bg-gradient-to-r from-violet-600 to-indigo-600 md:hover:from-violet-500 md:hover:to-indigo-500 text-white p-4 rounded-xl shadow-lg md:hover:shadow-indigo-200 transition-all flex items-center justify-between group relative overflow-hidden shrink-0 md:active:scale-100"
                     >
                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                         <div className="flex items-center gap-3">
