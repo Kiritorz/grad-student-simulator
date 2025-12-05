@@ -866,7 +866,7 @@ const GradStudentSimulator = () => {
       )}
 
       {/* 主游戏区域 */}
-      <div className="max-w-3xl w-full p-2 md:p-8 flex flex-col min-h-screen gap-3 relative">
+      <div className="max-w-3xl w-full p-2 md:p-8 flex flex-col min-h-screen gap-3 relative pb-safe">
         
         {/* 顶部栏 */}
         <header className={`grid grid-cols-[auto_1fr_auto] md:flex md:items-center items-center gap-2 md:gap-3 p-3 rounded-2xl shadow-sm border transition-colors duration-500 ${isAnomaly ? 'bg-slate-900 border-purple-700' : 'bg-white border-slate-200'}`}>
@@ -891,16 +891,22 @@ const GradStudentSimulator = () => {
              </div>
           </div>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-2">
+          {/* Right Actions: 增加 md:ml-auto 将其推到最右侧 */}
+          <div className="flex items-center gap-2 md:ml-auto">
               {/* Mobile Knowledge (Compact) */}
               <div className={`flex flex-col items-end md:hidden ${isAnomaly ? 'text-purple-300' : 'text-indigo-900'}`}>
                  <span className="text-[10px] font-bold opacity-60 uppercase">Knw.</span>
                  <span className="font-mono text-sm font-black leading-none">{stats.knowledge}</span>
               </div>
 
-              {/* Desktop Knowledge */}
-              <div className={`hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl border cursor-help transition-colors ${isAnomaly ? 'bg-slate-900 border-purple-800' : 'bg-slate-50 border-slate-100'}`} title="知识储备影响高级选项成功率">
+              {/* Desktop Knowledge - 优化了 title 说明 */}
+              <div 
+                className={`hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl border cursor-help transition-colors ${isAnomaly ? 'bg-slate-900 border-purple-800' : 'bg-slate-50 border-slate-100'}`} 
+                title="知识储备作用：
+1. 显著提高实验、论文等高级选项的成功率。
+2. 避免因知识不足导致的实验事故。
+3. 是达成'一代宗师'等特殊结局的关键条件。"
+              >
                 <div className={`p-1.5 rounded-lg border ${isAnomaly ? 'bg-slate-800 border-purple-800 text-purple-400' : 'bg-white border-slate-100 text-indigo-900'}`}>
                   <Briefcase size={16}/>
                 </div>
@@ -920,17 +926,18 @@ const GradStudentSimulator = () => {
           </div>
         </header>
 
-        {/* 状态面板 */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <StatCard icon={Zap} label="SAN值" value={stats.sanity} isAnomaly={isAnomaly} color="text-yellow-600" barColor="bg-yellow-500" borderColor="border-yellow-200" shadow="shadow-yellow-100" />
-            <StatCard icon={Skull} label="发量" value={stats.health} isAnomaly={isAnomaly} color="text-rose-600" barColor="bg-rose-500" borderColor="border-rose-200" shadow="shadow-rose-100" />
-            <StatCard icon={Award} label="科研" value={stats.research} isAnomaly={isAnomaly} color="text-blue-600" barColor="bg-blue-500" borderColor="border-blue-200" shadow="shadow-blue-100" />
-            <StatCard icon={Heart} label="导师好感" value={stats.affinity} isAnomaly={isAnomaly} color="text-pink-600" barColor="bg-pink-500" borderColor="border-pink-200" shadow="shadow-pink-100" />
-        </div>
+        {/* 状态面板 (仅在非角色创建阶段显示) */}
+        {phase !== 'CHARACTER_CREATION' && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <StatCard icon={Zap} label="SAN值" value={stats.sanity} isAnomaly={isAnomaly} color="text-yellow-600" barColor="bg-yellow-500" borderColor="border-yellow-200" shadow="shadow-yellow-100" />
+              <StatCard icon={Skull} label="发量" value={stats.health} isAnomaly={isAnomaly} color="text-rose-600" barColor="bg-rose-500" borderColor="border-rose-200" shadow="shadow-rose-100" />
+              <StatCard icon={Award} label="科研" value={stats.research} isAnomaly={isAnomaly} color="text-blue-600" barColor="bg-blue-500" borderColor="border-blue-200" shadow="shadow-blue-100" />
+              <StatCard icon={Heart} label="导师好感" value={stats.affinity} isAnomaly={isAnomaly} color="text-pink-600" barColor="bg-pink-500" borderColor="border-pink-200" shadow="shadow-pink-100" />
+          </div>
+        )}
 
         {/* 游戏内容区 */}
         <main className="flex-1 flex flex-col relative min-h-0"> 
-          {/* min-h-0 is crucial for nested scrolling if needed, though here we rely on page scroll */}
           
           {/* 阶段：特征选择 (开局) */}
           {phase === 'CHARACTER_CREATION' && (
@@ -947,7 +954,7 @@ const GradStudentSimulator = () => {
                       <button 
                         key={trait.id}
                         onClick={() => applyTrait(trait)}
-                        className="bg-white p-4 md:p-5 rounded-2xl border-2 border-slate-100 hover:border-indigo-300 hover:shadow-lg transition-all text-left group relative overflow-hidden flex flex-col h-full"
+                        className="bg-white p-4 md:p-5 rounded-2xl border-2 border-slate-100 md:hover:border-indigo-300 md:hover:shadow-lg transition-all text-left group relative overflow-hidden flex flex-col h-full active:scale-95 md:active:scale-100"
                       >
                          <div className={`absolute top-0 right-0 w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br ${trait.color} opacity-10 rounded-bl-full group-hover:scale-110 transition-transform`}></div>
                          <div className={`w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br ${trait.color} text-white flex items-center justify-center mb-3 shadow-md shrink-0`}>
@@ -976,7 +983,7 @@ const GradStudentSimulator = () => {
                 </div>
                 <button 
                   onClick={startGame}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95 md:active:scale-100"
                 >
                   <BookOpen size={20} />
                   开始研一生活
@@ -1018,16 +1025,16 @@ const GradStudentSimulator = () => {
               })()}
 
               {/* 选项区域 */}
-              <div className="flex flex-col gap-2 mt-auto min-h-[260px] md:min-h-[180px] justify-end">
+              <div className="flex flex-col gap-2 mt-auto min-h-[260px] md:min-h-[180px] justify-end pb-6 md:pb-0">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
                     {currentEvent.choices.map((choice, idx) => (
                     <button
                         key={idx}
                         onClick={() => handleChoice(choice, idx)}
-                        className={`h-full border-2 p-3 md:p-5 rounded-2xl text-left transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-md group relative overflow-hidden flex flex-col justify-between 
+                        className={`h-full border-2 p-3 md:p-5 rounded-2xl text-left transition-all duration-200 md:hover:-translate-y-1 shadow-sm md:hover:shadow-md group relative overflow-hidden flex flex-col justify-between 
                         ${isAnomaly 
-                            ? 'bg-slate-800 border-purple-800 hover:border-purple-500 hover:bg-slate-700' 
-                            : `bg-white hover:bg-slate-50 border-slate-100 hover:border-indigo-200 ${choice.hasRandom ? 'border-indigo-50/50' : ''}`
+                            ? 'bg-slate-800 border-purple-800 md:hover:border-purple-500 md:hover:bg-slate-700' 
+                            : `bg-white md:hover:bg-slate-50 border-slate-100 md:hover:border-indigo-200 ${choice.hasRandom ? 'border-indigo-50/50' : ''}`
                         }`}
                     >
                         {/* 背景大数字 */}
@@ -1053,7 +1060,7 @@ const GradStudentSimulator = () => {
                 {currentEvent.gambleOption ? (
                     <button
                         onClick={() => handleChoice(currentEvent.gambleOption, 999, true)}
-                        className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white p-4 rounded-xl shadow-lg hover:shadow-indigo-200 transition-all flex items-center justify-between group relative overflow-hidden shrink-0"
+                        className="bg-gradient-to-r from-violet-600 to-indigo-600 md:hover:from-violet-500 md:hover:to-indigo-500 text-white p-4 rounded-xl shadow-lg md:hover:shadow-indigo-200 transition-all flex items-center justify-between group relative overflow-hidden shrink-0"
                     >
                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                         <div className="flex items-center gap-3">
@@ -1067,9 +1074,6 @@ const GradStudentSimulator = () => {
                     </button>
                 ) : (
                     <div className="h-[76px] w-full shrink-0 hidden md:block" aria-hidden="true"></div>
-                )}
-                 {!currentEvent.gambleOption && (
-                    <div className="h-[76px] w-full shrink-0 md:hidden" aria-hidden="true"></div>
                 )}
               </div>
             </div>
@@ -1085,7 +1089,7 @@ const GradStudentSimulator = () => {
 
                 <button 
                     onClick={() => setIsReviewingEvent(!isReviewingEvent)}
-                    className={`absolute top-6 right-6 p-2 rounded-full transition-colors z-20 ${isAnomaly ? 'text-purple-600 hover:bg-purple-900 hover:text-purple-300' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-50'}`}
+                    className={`absolute top-6 right-6 p-2 rounded-full transition-colors z-20 ${isAnomaly ? 'text-purple-600 md:hover:bg-purple-900 md:hover:text-purple-300' : 'text-slate-400 md:hover:text-indigo-600 md:hover:bg-slate-50'}`}
                     title="查看原事件"
                 >
                     <Eye size={20} />
@@ -1159,7 +1163,7 @@ const GradStudentSimulator = () => {
 
                 <button 
                   onClick={nextTurn}
-                  className={`w-full text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98] text-base ${isAnomaly ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-900' : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'}`}
+                  className={`w-full text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98] text-base ${isAnomaly ? 'bg-purple-600 md:hover:bg-purple-500 shadow-purple-900' : 'bg-indigo-600 md:hover:bg-indigo-700 shadow-indigo-200'}`}
                 >
                   <span>{isReviewingEvent ? '返回结果' : '进入下一月'}</span>
                   {!isReviewingEvent && <ArrowRight size={18} />}
@@ -1200,7 +1204,7 @@ const GradStudentSimulator = () => {
 
                   <button 
                     onClick={resetGame}
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg"
+                    className="w-full bg-slate-900 md:hover:bg-slate-800 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg active:scale-95 md:active:scale-100"
                   >
                     重读研究生
                   </button>
@@ -1227,7 +1231,7 @@ const HistoryItem = ({ log, isMobile = false, isAnomaly = false }) => {
     };
 
     return (
-        <div className={`text-sm ${isMobile ? 'bg-slate-50 p-3 rounded-xl border border-slate-100 mb-3' : `border-l-2 pl-3 py-2 transition-colors ${isAnomaly ? 'border-purple-800 hover:border-purple-500 text-purple-200' : 'border-slate-200 hover:border-indigo-300 text-slate-600'}`}`}>
+        <div className={`text-sm ${isMobile ? 'bg-slate-50 p-3 rounded-xl border border-slate-100 mb-3' : `border-l-2 pl-3 py-2 transition-colors ${isAnomaly ? 'border-purple-800 md:hover:border-purple-500 text-purple-200' : 'border-slate-200 md:hover:border-indigo-300 text-slate-600'}`}`}>
             <div className={`flex justify-between text-xs mb-1 ${isAnomaly ? 'text-purple-400' : 'text-slate-400'}`}>
                 <span className="font-mono">Month {log.turn}</span>
                 {isMobile && log.isBad && <span className="text-rose-500 font-bold">危机</span>}
