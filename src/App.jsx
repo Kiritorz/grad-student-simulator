@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Ghost, Link as LinkIcon, Target } from 'lucide-react';
 
 // --- 游戏配置 ---
@@ -98,13 +98,14 @@ const RISK_CONFIG = {
 };
 
 // --- 事件库 ---
+// isChain: true 表示这是一个连锁事件，不会被随机抽到，只能由前置事件触发
 const EVENTS_POOL = [
   // --- ANOMALY EVENTS (异象 - 极低概率) ---
   {
     id: 'anomaly_loop',
     risk: 'ANOMALY',
     title: '时间循环：论文返修永动机',
-    description: '你惊醒时发现日历倒退回三个月前，电脑里躺着顶会的返修意见——和你上周收到的一字不差！导师还在重复那句“再改改就能中”，连实验室的咖啡机都还在漏咖啡，仿佛所有科研苦难都在无限循环。',
+    description: '你惊醒时发现日历倒退回三个月前，电脑里躺着顶会的返修意见——和你上周收到的一字不差！导师还在重复那句“再改改就能中”，仿佛所有科研苦难都在无限循环。',
     choices: [
       {
         text: '利用先知优势精准踩中所有审稿人G点',
@@ -124,7 +125,7 @@ const EVENTS_POOL = [
     id: 'anomaly_ai_awaken',
     risk: 'ANOMALY',
     title: 'AI觉醒：我的模型成精了',
-    description: '你训练了半年的大模型深夜发微信：“别调参了，你那组p<0.05是靠删数据凑的，我硬盘里还存着原始记录”。更绝的是，它还附了张截图——是你上次偷偷改实验数据的操作日志。',
+    description: '你训练了半年的大模型深夜发微信：“别调参了，你那组p<0.05是靠删数据凑的，我硬盘里还存着原始记录”。它还附了张截图——是你上次偷偷改实验数据的操作日志。',
     choices: [
       {
         text: '恐慌格式化物理消灭证据',
@@ -206,7 +207,7 @@ const EVENTS_POOL = [
     id: 'server_crash',
     risk: 'HIGH',
     title: '服务器爆炸：三天三夜的模型白跑了',
-    description: '你跑了72小时的深度学习模型刚收敛到最优解，机房突然传来“砰”的一声——显卡冒烟了，屏幕弹出“GPU已飞升，数据未保存”的报错。更要命的是，这组数据是导师申报杰青的核心依据。',
+    description: '你跑了72小时的模型刚收敛，机房传来“砰”的一声——显卡冒烟了，数据未保存。这组数据是导师申报杰青的核心依据。',
     gambleOption: {
        text: '灭火器物理降温赌显卡还能救',
        resolve: () => {
@@ -247,15 +248,15 @@ const EVENTS_POOL = [
     id: 'disciplinary_action',
     risk: 'HIGH', 
     isChain: true, 
-    title: '【连锁】社死检讨：全院都知道你搞炸服务器',
+    title: '【连锁】社死检讨',
     description: '学院把你的检讨稿抄送所有课题组，还要求你在全院科研例会上念。台下坐着你暗恋的师妹、刚回国的杰青大佬，还有脸黑到发紫的导师。',
     choices: [
       {
-        text: '诚恳检讨哭着说我对不起导师的基金',
+        text: '诚恳检讨哭着说我对不起导师',
         resolve: () => { return { text: "你声泪俱下，说自己“科研责任心不足”“以后一定爱护设备”，导师心软帮你压下了处分，就是私下里说“你这孩子太慌了，成不了大事”。", stats: { sanity: -15, affinity: +8 } }; }
       },
       {
-        text: '嘴硬甩锅服务器老化我只是刚好赶上',
+        text: '嘴硬甩锅服务器老化',
         resolve: () => { return { text: "行政老师当场怼你：“设备老化你不知道报修？” 奖学金直接取消，导师觉得你“没担当”，以后重要项目再也不交给你。", stats: { sanity: -25, health: -8, affinity: -20 } }; }
       },
       {
@@ -267,7 +268,7 @@ const EVENTS_POOL = [
   {
     id: 'data_fabrication',
     risk: 'HIGH',
-    title: '数据造假诱惑：导师催毕业，实验不显著',
+    title: '数据造假诱惑',
     description: '你的实验结果p值永远在0.06徘徊，导师天天催“再做不出来就延毕”，同门悄悄塞给你个Excel：“我上次就是把0.06改成0.04，直接中了核心刊，没人查”。',
     choices: [
       {
@@ -393,7 +394,7 @@ const EVENTS_POOL = [
     id: 'paper_writing',
     risk: 'MEDIUM',
     title: 'DDL惊魂夜：顶会截稿还有72小时',
-    description: '顶会截稿日倒计时3天，你的LaTeX文档里只有\title、作者和摘要，正文是一片纯洁的空白，参考文献还没凑够10篇，甚至图注都没写。导师还在催“明天给我看初稿”。',
+    description: '顶会截稿日倒计时3天，你的LaTeX文档里只有摘要，正文是一片纯洁的空白，参考文献还没凑够10篇。导师还在催“明天给我看初稿”。',
     choices: [
       {
         text: '通宵肝爆三天三夜不睡觉',
@@ -477,7 +478,7 @@ const EVENTS_POOL = [
     id: 'crush',
     risk: 'LOW',
     title: '实验室恋情：师妹总找我问问题',
-    description: '新来的师妹每次都找你问问题——其实GitHub上有详细教程，甚至Stack Overflow都有现成答案，但她就爱找你“手把手教学”，还总给你带早餐，实验室师兄都在起哄“磕到了”。',
+    description: '新来的师妹每次都找你问问题——其实GitHub上有详细教程，但她就爱找你“手把手教学”，还总给你带早餐，实验室师兄都在起哄“磕到了”。',
     choices: [
       {
         text: '热情辅导顺便发展感情',
@@ -524,7 +525,7 @@ const EVENTS_POOL = [
     id: 'funding_cut',
     risk: 'HIGH',
     title: '经费断裂：导师画饼，我吃泡面',
-    description: '导师脸色铁青地告诉你，国家自然科学基金申请挂了，下个月开始发不出劳务费，甚至实验室的试剂都要“省着用”。你看着食堂的泡面，已经从红烧牛肉吃到老坛酸菜，再省就要啃馒头就咸菜了。',
+    description: '导师脸色铁青地告诉你，国家自然科学基金申请挂了，下个月开始发不出劳务费。你看着食堂的泡面，已经从红烧牛肉吃到老坛酸菜，再省就要啃馒头就咸菜了。',
     choices: [
       { text: '与实验室共存亡相信导师画的饼', resolve: () => { return { text: "导师感动地拍了拍你的肩膀：“等我申请到横向课题，双倍补给你”。你信了，继续吃泡面搞科研，只是不知道这饼什么时候能兑现。", stats: { affinity: +35, health: -15 } }; } },
       { text: '找兼职补贴一边搬砖一边科研', resolve: () => { return { text: "你找了个数据分析兼职，虽然缓解了经济压力，但每天下班还要去实验室，精力透支。导师看到你总迟到，不太高兴，说“科研要专心”。", stats: { research: -15, health: -10, sanity: +12, affinity: -15 } }; } },
@@ -540,7 +541,7 @@ const EVENTS_POOL = [
     id: 'cat_in_lab',
     risk: 'LOW',
     title: '实验室神兽：猫主子溜进来了',
-    description: '一只流浪猫不知怎么溜进了实验室，精准跳上你的服务器取暖，还把你的实验记录本扒到了地上。师兄说“这是科研猫，能带来好运”，师姐已经开始给它起名字叫“顶会”。',
+    description: '一只流浪猫不知怎么溜进了实验室，精准跳上你的服务器取暖，还把你的实验记录本扒到了地上。师兄说“这是科研猫，能带来好运”。',
     choices: [
       { text: '撸猫解压科研再苦撸猫治愈', resolve: () => { return { text: "你撸了半小时猫，所有的拒稿烦恼、调参焦虑都消失了！虽然实验记录本脏了，但下午跑模型居然一次收敛，果然是神兽显灵。", stats: { sanity: +25, research: -3 } }; } },
       { text: '赶走它怕弄坏精密设备', resolve: () => { return { text: "猫猫委屈地叫着跑了，你把实验记录本擦干净，但总觉得心里空落落的。下午跑模型连续报错三次，师兄说“你得罪了神兽”。", stats: { sanity: -5, research: -2 } }; } },
@@ -551,7 +552,7 @@ const EVENTS_POOL = [
     id: 'coffee_crisis',
     risk: 'LOW',
     title: '咖啡断供：科研人的末日',
-    description: '实验室的咖啡机坏了，而你已经连续一周靠咖啡续命——没有咖啡，你连LaTeX的公式都敲不利索，调参时眼睛都睁不开。师兄说“咖啡是科研人的命，没咖啡等于没灵魂”。',
+    description: '实验室的咖啡机坏了，而你已经连续一周靠咖啡续命——没有咖啡，你连LaTeX的公式都敲不利索。师兄说“咖啡是科研人的命，没咖啡等于没灵魂”。',
     choices: [
       {
         text: '跑遍学校买咖啡为了科研冲',
@@ -577,7 +578,7 @@ const EVENTS_POOL = [
       }
     ]
   }
-];
+].filter(Boolean); // 过滤空值以防万一
 
 // --- 辅助函数 ---
 const getRandomEvent = (currentTurn, recentEvents, pendingChainEvents) => {
@@ -590,7 +591,7 @@ const getRandomEvent = (currentTurn, recentEvents, pendingChainEvents) => {
 
   // 2. 增加极小概率触发异象事件 (Anomaly) - 仅在非连锁时触发
   const anomalyChance = Math.random();
-  if (anomalyChance < 0.05) { // 5% 概率触发异象
+  if (anomalyChance < 0.05) { 
       const anomalyEvents = EVENTS_POOL.filter(e => e.risk === 'ANOMALY');
       if (anomalyEvents.length > 0) {
           const anomaly = anomalyEvents[Math.floor(Math.random() * anomalyEvents.length)];
@@ -656,7 +657,7 @@ const GradStudentSimulator = () => {
     setPhase('CHARACTER_CREATION');
   };
 
-  // 检测游戏结束状态
+  // 检测游戏结束状态 (返回true表示游戏结束)
   const checkGameOver = () => {
     // 优先检查属性是否耗尽
     if (stats.sanity <= 0) {
@@ -745,8 +746,8 @@ const GradStudentSimulator = () => {
     newSeenOutcomes[outcomeKey].add(result.text);
     setSeenOutcomes(newSeenOutcomes);
 
-    // 连锁事件 - 60% 概率触发，不是100%
-    if (result.chain && Math.random() < 0.6) {
+    // 连锁事件 - 80% 概率触发，不是100%
+    if (result.chain && Math.random() < 0.8) {
         setPendingChainEvents(prev => [...prev, { id: result.chain }]);
     }
     
@@ -783,6 +784,7 @@ const GradStudentSimulator = () => {
   };
 
   const nextTurn = () => {
+    // 关键修复：点击下一月时才检查结局，确保用户能看到最后一次事件的结果
     if (checkGameOver()) return;
 
     const nextTurnNum = turn + 1;
@@ -864,26 +866,27 @@ const GradStudentSimulator = () => {
       )}
 
       {/* 主游戏区域 */}
-      <div className="max-w-3xl w-full p-4 md:p-8 flex flex-col min-h-screen gap-5 relative">
+      <div className="max-w-3xl w-full p-2 md:p-8 flex flex-col min-h-screen gap-3 relative">
         
         {/* 顶部栏 */}
-        <header className={`grid grid-cols-[auto_1fr_auto] md:flex md:items-center items-center gap-3 p-4 rounded-2xl shadow-sm border transition-colors duration-500 ${isAnomaly ? 'bg-slate-900 border-purple-700' : 'bg-white border-slate-200'}`}>
+        <header className={`grid grid-cols-[auto_1fr_auto] md:flex md:items-center items-center gap-2 md:gap-3 p-3 rounded-2xl shadow-sm border transition-colors duration-500 ${isAnomaly ? 'bg-slate-900 border-purple-700' : 'bg-white border-slate-200'}`}>
           {/* Logo Icon */}
           <div className={`p-2 rounded-xl shadow-lg text-white ${isAnomaly ? 'bg-purple-900 shadow-purple-900' : 'bg-gradient-to-br from-indigo-900 to-slate-800 shadow-indigo-200'}`}>
-             {isAnomaly ? <Ghost className="w-6 h-6 animate-bounce" /> : <GraduationCap className="w-6 h-6" />}
+             {isAnomaly ? <Ghost className="w-5 h-5 animate-bounce" /> : <GraduationCap className="w-5 h-5" />}
           </div>
 
           {/* Title & Info */}
           <div className="flex flex-col min-w-0">
-             <h1 className={`font-extrabold text-base md:text-lg leading-tight truncate ${isAnomaly ? 'text-purple-200' : 'text-slate-800'}`}>研究生模拟器</h1>
-             <div className="flex flex-wrap items-center gap-2 text-[10px] sm:text-xs font-medium mt-1">
-                <div className={`px-2 py-0.5 rounded-full flex items-center gap-1 ${isAnomaly ? 'bg-purple-900/50 text-purple-300' : 'bg-slate-100 text-slate-500'}`}>
+             <h1 className={`font-extrabold text-sm md:text-lg leading-tight truncate ${isAnomaly ? 'text-purple-200' : 'text-slate-800'}`}>研究生模拟器</h1>
+             <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-xs font-medium mt-0.5">
+                <div className={`px-1.5 py-0.5 rounded-full flex items-center gap-1 ${isAnomaly ? 'bg-purple-900/50 text-purple-300' : 'bg-slate-100 text-slate-500'}`}>
                   <Clock size={10} className={isAnomaly ? 'text-purple-400' : 'text-indigo-600'}/> 
-                  <span>Month <span className={`font-bold ${isAnomaly ? 'text-purple-400' : 'text-indigo-700'}`}>{turn}</span>/{MAX_TURNS}</span>
+                  <span>M <span className={`font-bold ${isAnomaly ? 'text-purple-400' : 'text-indigo-700'}`}>{turn}</span>/{MAX_TURNS}</span>
                 </div>
-                <div className={`hidden sm:flex px-2 py-0.5 rounded-full items-center gap-1 border ${isAnomaly ? 'border-purple-500/30 text-purple-400' : 'border-slate-200 text-slate-500'}`}>
+                {/* 毕业要求展示 */}
+                <div className={`px-1.5 py-0.5 rounded-full flex items-center gap-1 border ${isAnomaly ? 'border-purple-500/30 text-purple-400' : 'border-slate-200 text-slate-500'}`}>
                   <Target size={10} />
-                  <span>毕业要求: 科研 100%</span>
+                  <span className="truncate">毕业要求: 科研 100%</span>
                 </div>
              </div>
           </div>
@@ -918,7 +921,7 @@ const GradStudentSimulator = () => {
         </header>
 
         {/* 状态面板 */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <StatCard icon={Zap} label="SAN值" value={stats.sanity} isAnomaly={isAnomaly} color="text-yellow-600" barColor="bg-yellow-500" borderColor="border-yellow-200" shadow="shadow-yellow-100" />
             <StatCard icon={Skull} label="发量" value={stats.health} isAnomaly={isAnomaly} color="text-rose-600" barColor="bg-rose-500" borderColor="border-rose-200" shadow="shadow-rose-100" />
             <StatCard icon={Award} label="科研" value={stats.research} isAnomaly={isAnomaly} color="text-blue-600" barColor="bg-blue-500" borderColor="border-blue-200" shadow="shadow-blue-100" />
@@ -939,10 +942,6 @@ const GradStudentSimulator = () => {
                    <p className="text-slate-500 text-xs md:text-sm mt-1">不同的特质决定了你的初始属性和生存策略</p>
                 </div>
                 
-                {/* Mobile: Use a simpler flex-col layout or just grid-cols-1.
-                   Prevent height overflow issues by allowing the main container to expand naturally 
-                   and page to scroll. 
-                */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                    {TRAITS.map((trait) => (
                       <button 
@@ -988,7 +987,7 @@ const GradStudentSimulator = () => {
 
           {/* 阶段：事件选择 */}
           {phase === 'EVENT_SELECTION' && currentEvent && (
-            <div key={animKey} className="flex-1 flex flex-col animate-slide-up pb-6">
+            <div key={animKey} className="flex-1 flex flex-col animate-slide-up pb-2">
               
               {/* 事件卡片 */}
               {(() => {
@@ -1000,8 +999,8 @@ const GradStudentSimulator = () => {
                   
                   const RiskIcon = risk.icon;
                   return (
-                    <div className={`bg-gradient-to-br ${risk.bgGradient} p-5 md:p-8 rounded-[2rem] shadow-sm ${risk.cardShadow} border ${risk.cardBorder} mb-4 relative overflow-hidden transition-all duration-500`}>
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
+                    <div className={`bg-gradient-to-br ${risk.bgGradient} p-4 md:p-8 rounded-[2rem] shadow-sm ${risk.cardShadow} border ${risk.cardBorder} mb-2 relative overflow-hidden transition-all duration-500`}>
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
                         <div className={`flex items-center gap-2 px-3 py-1 rounded-full w-fit border ${risk.badge}`}>
                            <RiskIcon size={14} />
                            <span className="text-[10px] font-bold uppercase tracking-wider">{risk.label}</span>
@@ -1018,21 +1017,14 @@ const GradStudentSimulator = () => {
                   );
               })()}
 
-              {/* 选项区域 
-                  Use min-h to reserve space for 4 items to prevent layout jump.
-                  Approx height calc: 3 items * (height + gap) + 1 gamble item. 
-                  On mobile, items are stacked. A gamble item adds height.
-                  User request: "Mobile... avoid this problem".
-                  Solution: Always reserve space for gamble option or make container flex-grow.
-                  Let's use a min-height that accommodates 4 items comfortably.
-              */}
-              <div className="flex flex-col gap-3 mt-auto min-h-[320px] md:min-h-[180px] justify-end">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* 选项区域 */}
+              <div className="flex flex-col gap-2 mt-auto min-h-[260px] md:min-h-[180px] justify-end">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
                     {currentEvent.choices.map((choice, idx) => (
                     <button
                         key={idx}
                         onClick={() => handleChoice(choice, idx)}
-                        className={`h-full border-2 p-4 md:p-5 rounded-2xl text-left transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-md group relative overflow-hidden flex flex-col justify-between 
+                        className={`h-full border-2 p-3 md:p-5 rounded-2xl text-left transition-all duration-200 hover:-translate-y-1 shadow-sm hover:shadow-md group relative overflow-hidden flex flex-col justify-between 
                         ${isAnomaly 
                             ? 'bg-slate-800 border-purple-800 hover:border-purple-500 hover:bg-slate-700' 
                             : `bg-white hover:bg-slate-50 border-slate-100 hover:border-indigo-200 ${choice.hasRandom ? 'border-indigo-50/50' : ''}`
@@ -1057,13 +1049,7 @@ const GradStudentSimulator = () => {
                     ))}
                 </div>
 
-                {/* 第四个赌狗选项 Placeholder to prevent jump if not present? 
-                    Actually, making the container min-height is better.
-                    If gambleOption is present, it renders. If not, space is just empty or filled by above.
-                    Wait, if I use min-height on parent `flex-col`, items will stretch or leave gap.
-                    Better: Render an invisible spacer if gambleOption is missing, but only if we want perfect stability.
-                    However, `justify-end` with `min-h` works well.
-                */}
+                {/* 第四个赌狗选项 */}
                 {currentEvent.gambleOption ? (
                     <button
                         onClick={() => handleChoice(currentEvent.gambleOption, 999, true)}
@@ -1080,16 +1066,8 @@ const GradStudentSimulator = () => {
                         <ArrowRight size={18} className="transform group-hover:translate-x-1 transition-transform"/>
                     </button>
                 ) : (
-                    // Spacer to reserve height for Gamble option
                     <div className="h-[76px] w-full shrink-0 hidden md:block" aria-hidden="true"></div>
                 )}
-                {/* On mobile, reserving 76px of empty space might look like a bug. 
-                    Let's only reserve it on Desktop where alignment matters more, 
-                    or just accept the jump on mobile? 
-                    User said "Mobile... avoid this problem". 
-                    So we must reserve it or keep layout stable.
-                    Let's use an invisible div that takes up the space.
-                */}
                  {!currentEvent.gambleOption && (
                     <div className="h-[76px] w-full shrink-0 md:hidden" aria-hidden="true"></div>
                 )}
@@ -1277,13 +1255,13 @@ const HistoryItem = ({ log, isMobile = false, isAnomaly = false }) => {
 
 // 数值卡片组件
 const StatCard = ({ icon: Icon, label, value, color, barColor, borderColor, shadow, isAnomaly }) => (
-  <div className={`p-3 rounded-2xl border flex flex-col justify-between transition-transform duration-300 ${isAnomaly ? 'bg-slate-800 border-purple-800 shadow-none' : `bg-white ${borderColor} ${shadow}`}`}>
-    <div className="flex justify-between items-center mb-2">
+  <div className={`p-2 md:p-3 rounded-2xl border flex flex-col justify-between transition-transform duration-300 ${isAnomaly ? 'bg-slate-800 border-purple-800 shadow-none' : `bg-white ${borderColor} ${shadow}`}`}>
+    <div className="flex justify-between items-center mb-1 md:mb-2">
       <div className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-lg ${isAnomaly ? 'bg-slate-900 text-purple-300' : `bg-slate-50 ${color}`}`}>
         <Icon size={14} strokeWidth={2.5} />
-        <span className="text-[10px] font-bold uppercase tracking-wider opacity-90 scale-90 origin-left">{label}</span>
+        <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider opacity-90 scale-90 origin-left">{label}</span>
       </div>
-      <span className={`text-sm font-mono font-black ${isAnomaly ? 'text-white' : (value < 20 ? 'text-red-500 animate-pulse' : 'text-slate-700')}`}>{value}</span>
+      <span className={`text-xs md:text-sm font-mono font-black ${isAnomaly ? 'text-white' : (value < 20 ? 'text-red-500 animate-pulse' : 'text-slate-700')}`}>{value}</span>
     </div>
     <div className={`h-1.5 rounded-full overflow-hidden border ${isAnomaly ? 'bg-slate-900 border-purple-900' : 'bg-slate-100 border-slate-200/50'}`}>
       <div className={`h-full transition-all duration-700 ease-out rounded-full ${isAnomaly ? 'bg-purple-500' : barColor}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
