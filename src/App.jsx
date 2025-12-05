@@ -109,7 +109,7 @@ const EVENTS_POOL = [
     choices: [
       {
         text: '利用先知优势精准踩中所有审稿人G点',
-        resolve: () => { return { text: "你避开了上次被怼的所有坑，论文秒接收！但SAN值因“提前体验答辩痛苦”直线下滑，现在看到LaTeX就想吐。", stats: { research: +30, sanity: -25, knowledge: +15 } }; }
+        resolve: () => { return { text: "你避开了所有坑，论文秒接收！但SAN值因“提前体验答辩痛苦”直线下滑，现在看到LaTeX就想吐。", stats: { research: +30, sanity: -25, knowledge: +15 } }; }
       },
       {
         text: '反向操作告诉导师这轮返修必中先涨劳务费',
@@ -635,11 +635,43 @@ const GradStudentSimulator = () => {
   // 历史与逻辑控制
   const [historyLog, setHistoryLog] = useState([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [seenOutcomes, setSeenOutcomes] = useState({});
+  // 从localStorage初始化已探索分支
+  const [seenOutcomes, setSeenOutcomes] = useState(() => {
+      try {
+          const saved = localStorage.getItem('gradSim_seenOutcomes');
+          if (saved) {
+              const parsed = JSON.parse(saved);
+              // 将数组转回Set
+              const reconstructed = {};
+              Object.keys(parsed).forEach(key => {
+                  reconstructed[key] = new Set(parsed[key]);
+              });
+              return reconstructed;
+          }
+      } catch (e) {
+          console.error("Failed to load history", e);
+      }
+      return {};
+  });
+  
   const [recentEvents, setRecentEvents] = useState([]); 
   const [pendingChainEvents, setPendingChainEvents] = useState([]);
   
   const [isReviewingEvent, setIsReviewingEvent] = useState(false);
+
+  // 持久化保存已探索分支
+  useEffect(() => {
+      try {
+          // Set无法直接JSON序列化，需转为数组
+          const serialized = {};
+          Object.keys(seenOutcomes).forEach(key => {
+              serialized[key] = Array.from(seenOutcomes[key]);
+          });
+          localStorage.setItem('gradSim_seenOutcomes', JSON.stringify(serialized));
+      } catch (e) {
+          console.error("Failed to save history", e);
+      }
+  }, [seenOutcomes]);
 
   // 彻底重置游戏
   const resetGame = () => {
@@ -649,7 +681,7 @@ const GradStudentSimulator = () => {
     setHistoryLog([]);
     setRecentEvents([]);
     setPendingChainEvents([]);
-    setSeenOutcomes({});
+    // 注意：不再清空 seenOutcomes
     setSelectedTrait(null);
     setResultLog(null);
     setCurrentEvent(null);
@@ -983,7 +1015,7 @@ const GradStudentSimulator = () => {
                 </div>
                 <button 
                   onClick={startGame}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95 md:active:scale-100"
+                  className="w-full bg-slate-900 md:hover:bg-slate-800 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95 md:active:scale-100"
                 >
                   <BookOpen size={20} />
                   开始研一生活
@@ -1025,13 +1057,13 @@ const GradStudentSimulator = () => {
               })()}
 
               {/* 选项区域 */}
-              <div className="flex flex-col gap-2 mt-auto min-h-[260px] md:min-h-[180px] justify-end pb-6 md:pb-0">
+              <div className="flex flex-col gap-2 mt-auto min-h-[260px] md:min-h-[180px] justify-end pb-12 md:pb-0">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
                     {currentEvent.choices.map((choice, idx) => (
                     <button
                         key={idx}
                         onClick={() => handleChoice(choice, idx)}
-                        className={`h-full border-2 p-3 md:p-5 rounded-2xl text-left transition-all duration-200 md:hover:-translate-y-1 shadow-sm md:hover:shadow-md group relative overflow-hidden flex flex-col justify-between 
+                        className={`h-full border-2 p-3 md:p-5 rounded-2xl text-left transition-all duration-200 md:hover:-translate-y-1 shadow-sm md:hover:shadow-md group relative overflow-hidden flex flex-col justify-between active:scale-[0.98] md:active:scale-100 
                         ${isAnomaly 
                             ? 'bg-slate-800 border-purple-800 md:hover:border-purple-500 md:hover:bg-slate-700' 
                             : `bg-white md:hover:bg-slate-50 border-slate-100 md:hover:border-indigo-200 ${choice.hasRandom ? 'border-indigo-50/50' : ''}`
@@ -1060,7 +1092,7 @@ const GradStudentSimulator = () => {
                 {currentEvent.gambleOption ? (
                     <button
                         onClick={() => handleChoice(currentEvent.gambleOption, 999, true)}
-                        className="bg-gradient-to-r from-violet-600 to-indigo-600 md:hover:from-violet-500 md:hover:to-indigo-500 text-white p-4 rounded-xl shadow-lg md:hover:shadow-indigo-200 transition-all flex items-center justify-between group relative overflow-hidden shrink-0"
+                        className="bg-gradient-to-r from-violet-600 to-indigo-600 md:hover:from-violet-500 md:hover:to-indigo-500 text-white p-4 rounded-xl shadow-lg md:hover:shadow-indigo-200 transition-all flex items-center justify-between group relative overflow-hidden shrink-0 active:scale-[0.98] md:active:scale-100"
                     >
                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                         <div className="flex items-center gap-3">
@@ -1074,6 +1106,9 @@ const GradStudentSimulator = () => {
                     </button>
                 ) : (
                     <div className="h-[76px] w-full shrink-0 hidden md:block" aria-hidden="true"></div>
+                )}
+                 {!currentEvent.gambleOption && (
+                    <div className="h-[76px] w-full shrink-0 md:hidden" aria-hidden="true"></div>
                 )}
               </div>
             </div>
@@ -1110,7 +1145,7 @@ const GradStudentSimulator = () => {
                         <p className={`font-bold text-xl ${isAnomaly ? 'text-white' : 'text-slate-800'}`}>{resultLog.choiceText}</p>
                         </div>
                         
-                        <div className={`mb-6 flex-1 p-5 rounded-2xl border relative ${isAnomaly ? 'bg-slate-900/50 border-purple-700' : 'bg-slate-50/80 border-slate-200'}`}>
+                        <div className={`mb-6 flex-1 p-5 rounded-2xl border relative ${isAnomaly ? 'bg-slate-900/50 border-purple-700' : 'bg-slate-50/80 border-slate-200'} overflow-y-auto custom-scrollbar max-h-[40vh]`}>
                         <div className={`absolute -left-1 top-6 w-1 h-10 rounded-r-full ${isAnomaly ? 'bg-purple-500' : 'bg-indigo-500'}`}></div>
                         
                         <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isAnomaly ? 'text-purple-400' : 'text-slate-400'}`}>当前结果</h3>
@@ -1123,7 +1158,7 @@ const GradStudentSimulator = () => {
                                 <h4 className={`text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1 ${isAnomaly ? 'text-purple-400' : 'text-indigo-400'}`}>
                                     <Sparkles size={10}/> 已探索的其他分支
                                 </h4>
-                                <ul className="space-y-1.5">
+                                <ul className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
                                     {Array.from(seenOutcomes[resultLog.outcomeKey])
                                         .filter(text => text !== resultLog.outcomeText)
                                         .map((text, i) => (
