@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Ghost, Link as LinkIcon, Target, Github } from 'lucide-react';
+import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Ghost, Link as LinkIcon, Target, Github, Trophy, Medal } from 'lucide-react';
 
 // --- 游戏配置 ---
 const MAX_TURNS = 36; // 36个月 (3年制)
@@ -580,6 +580,37 @@ const EVENTS_POOL = [
   }
 ].filter(Boolean); // 过滤空值以防万一
 
+// --- 毕业评级计算函数 ---
+const getGraduationEnding = (turn, stats) => {
+  const { sanity, health, affinity, knowledge } = stats;
+  
+  // 1. T0 传说级
+  if (turn <= 6) return { title: "光速逃逸", desc: "半年就毕业？你就是学术界的博尔特！建议直接申请火星移民计划。", color: "text-amber-500", icon: Zap };
+  if (sanity >= 100 && health >= 100 && affinity >= 100 && knowledge >= 100) 
+    return { title: "学术之神", desc: "各项指标全部拉满！人类的学术评价体系已经无法定义你的存在。", color: "text-rose-600", icon: Crown };
+
+  // 2. T1 卓越级
+  if (turn <= 12) return { title: "天才少年", desc: "一年毕业的神童，你的名字将永远刻在学院的荣誉墙上（和导师的PPT里）。", color: "text-purple-500", icon: Sparkles };
+  if (sanity >= 80 && health >= 80 && affinity >= 80 && knowledge >= 80) 
+    return { title: "六边形战士", desc: "德智体美劳全面发展，你就是导师口中那个“别人家的研究生”。", color: "text-indigo-500", icon: Target };
+
+  // 3. T2 专精级
+  if (knowledge >= 90) return { title: "诺奖预备役", desc: "你的知识储备令人恐惧，答辩现场变成了你的个人科普讲座。", color: "text-blue-600", icon: Briefcase };
+  if (affinity >= 90) return { title: "掌门大弟子", desc: "导师看你的眼神比看亲儿子还亲，甚至想把实验室钥匙传给你。", color: "text-pink-500", icon: Heart };
+  if (health >= 90) return { title: "养生宗师", desc: "读研三年，头发没少，反而练出了八块腹肌。你来读研是顺便健个身？", color: "text-green-600", icon: Smile };
+  if (sanity >= 90) return { title: "心如止水", desc: "泰山崩于前而色不变，拒稿信砸在脸上而心不惊。你已修成正果。", color: "text-cyan-500", icon: Coffee };
+
+  // 4. T3 生存级
+  if (health <= 20) return { title: "战损版毕业", desc: "你是被担架抬进答辩现场的。虽然毕业了，但建议先去ICU挂个号。", color: "text-red-600", icon: Skull };
+  if (sanity <= 20) return { title: "克苏鲁学者", desc: "你毕业了，但你也疯了。你的论文充满了不可名状的低语...", color: "text-violet-700", icon: Ghost };
+  if (affinity <= 20) return { title: "孤狼学者", desc: "全靠自己单打独斗发顶刊，导师在答辩会上全程黑脸，但不得不让你过。", color: "text-slate-600", icon: Frown };
+
+  // 5. 特殊级
+  if (knowledge < 30) return { title: "天选之子", desc: "你也搞不懂这论文是怎么写出来的，反正模型就是收敛了，这大概就是玄学吧。", color: "text-yellow-500", icon: Dices };
+
+  return { title: "顺利毕业", desc: "普普通通的毕业，平平淡淡的幸福。你战胜了99%的同龄人。", color: "text-indigo-600", icon: GraduationCap };
+};
+
 // --- 辅助函数 ---
 const getRandomEvent = (currentTurn, recentEvents, pendingChainEvents) => {
   // 1. 优先处理连锁事件 (优先级最高)
@@ -707,11 +738,9 @@ const GradStudentSimulator = () => {
 
     // 检查是否达到胜利条件
     if (stats.research >= 100) {
-      if (stats.knowledge >= 90) {
-          endGame("HAPPY", "一代宗师", "你的研究不仅发表了，还开创了一个新的流派。你被誉为百年难遇的学术天才。");
-      } else {
-          endGame("HAPPY", "顺利毕业", "论文被顶刊接收！你成为了学术界的新星，所有痛苦都变成了荣耀。");
-      }
+      // 调用新的结局评级系统
+      const ending = getGraduationEnding(turn, stats);
+      endGame("HAPPY", ending.title, ending.desc, ending.color, ending.icon);
       return true;
     }
 
@@ -759,9 +788,9 @@ const GradStudentSimulator = () => {
     }
   };
 
-  const endGame = (type, title, reason) => {
+  const endGame = (type, title, reason, color, Icon) => {
     setPhase('END');
-    setEndReason({ type, title, text: reason });
+    setEndReason({ type, title, text: reason, color, Icon });
   };
 
   const handleChoice = (choice, choiceIndex, isGamble = false) => {
@@ -1231,7 +1260,7 @@ const GradStudentSimulator = () => {
                   <div className="mb-4 flex justify-center">
                     {endReason.type === 'HAPPY' ? 
                       <div className="p-4 bg-yellow-50 border-4 border-yellow-100 rounded-full animate-bounce">
-                         <Smile className="w-16 h-16 text-yellow-500" />
+                         <endReason.Icon className={`w-16 h-16 ${endReason.color.replace('text-', 'text-')}`} />
                       </div> : 
                       <div className="p-4 bg-slate-50 border-4 border-slate-100 rounded-full">
                          <Frown className="w-16 h-16 text-slate-400" />
