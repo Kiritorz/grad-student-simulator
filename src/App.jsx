@@ -1,8 +1,41 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Ghost, Link as LinkIcon, Target, Github, Trophy, Medal } from 'lucide-react';
+import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Ghost, Link as LinkIcon, Target, Github, Trophy, Lock, Medal, ZapOff } from 'lucide-react';
 
 // --- 游戏配置 ---
 const MAX_TURNS = 36; // 36个月 (3年制)
+
+// --- 成就系统定义 ---
+const ACHIEVEMENTS_DATA = [
+  // T0: 传说级毕业
+  { id: 'god_mode', title: '学术之神', desc: '各项指标全部拉满！人类的学术评价体系已经无法定义你的存在。', condition: '所有属性满值毕业', icon: Crown, color: 'text-amber-500', bg: 'bg-amber-100', border: 'border-amber-300' },
+  { id: 'speed_run_6', title: '光速逃逸', desc: '半年就毕业？你就是学术界的博尔特！建议直接申请火星移民计划。', condition: '6个月内毕业', icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-100', border: 'border-yellow-300' },
+  
+  // T1: 卓越级毕业
+  { id: 'speed_run_12', title: '天才少年', desc: '一年毕业的神童，你的名字将永远刻在学院的荣誉墙上。', condition: '12个月内毕业', icon: Sparkles, color: 'text-purple-500', bg: 'bg-purple-100', border: 'border-purple-300' },
+  { id: 'hexagon', title: '六边形战士', desc: '德智体美劳全面发展，你就是导师口中那个“别人家的研究生”。', condition: '所有属性高于80毕业', icon: Target, color: 'text-indigo-500', bg: 'bg-indigo-100', border: 'border-indigo-300' },
+
+  // T2: 专精级毕业
+  { id: 'nobel_reserve', title: '诺奖预备役', desc: '你的知识储备令人恐惧，答辩现场变成了你的个人科普讲座。', condition: '知识>=90毕业', icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-100', border: 'border-blue-300' },
+  { id: 'head_disciple', title: '掌门大弟子', desc: '导师看你的眼神比看亲儿子还亲，甚至想把实验室钥匙传给你。', condition: '好感>=90毕业', icon: Heart, color: 'text-pink-500', bg: 'bg-pink-100', border: 'border-pink-300' },
+  { id: 'health_master', title: '养生宗师', desc: '读研三年，头发没少，反而练出了八块腹肌。你来读研是顺便健个身？', condition: '发量>=90毕业', icon: Smile, color: 'text-green-600', bg: 'bg-green-100', border: 'border-green-300' },
+  { id: 'zen_master', title: '心如止水', desc: '泰山崩于前而色不变，拒稿信砸在脸上而心不惊。你已修成正果。', condition: 'SAN值>=90毕业', icon: Coffee, color: 'text-cyan-500', bg: 'bg-cyan-100', border: 'border-cyan-300' },
+
+  // T3: 生存级毕业
+  { id: 'battle_scarred', title: '战损版毕业', desc: '你是被担架抬进答辩现场的。虽然毕业了，但建议先去ICU挂个号。', condition: '发量<=20毕业', icon: Skull, color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-300' },
+  { id: 'cthulhu', title: '克苏鲁学者', desc: '你毕业了，但你也疯了。你的论文充满了不可名状的低语...', condition: 'SAN值<=20毕业', icon: Ghost, color: 'text-violet-700', bg: 'bg-violet-100', border: 'border-violet-300' },
+  { id: 'lone_wolf', title: '孤狼学者', desc: '全靠自己单打独斗发顶刊，导师在答辩会上全程黑脸，但不得不让你过。', condition: '好感<=20毕业', icon: Frown, color: 'text-slate-600', bg: 'bg-slate-100', border: 'border-slate-300' },
+  { id: 'lucky_dog', title: '天选之子', desc: '你也搞不懂这论文是怎么写出来的，反正模型就是收敛了，这大概就是玄学吧。', condition: '知识<30毕业', icon: Dices, color: 'text-yellow-500', bg: 'bg-yellow-50', border: 'border-yellow-300' },
+  { id: 'normal_grad', title: '顺利毕业', desc: '普普通通的毕业，平平淡淡的幸福。你战胜了99%的同龄人。', condition: '正常毕业', icon: GraduationCap, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+
+  // T4: 失败/特殊结局
+  { id: 'instant_death', title: '落地成盒', desc: '开局第一个月就退学了，这也算是一种速通吧？', condition: '第1个月即失败', icon: ZapOff, color: 'text-gray-500', bg: 'bg-gray-100', border: 'border-gray-300' },
+  { id: 'almost_there', title: '倒在黎明前', desc: '明明只差一点点... 科研进度都95%了，心态却先崩了。', condition: '科研>=95时失败', icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-100', border: 'border-orange-300' },
+  { id: 'sanity_zero', title: '精神崩溃', desc: '你在这个周一的早晨选择了退学。也许卖炒粉才是你的归宿？', condition: 'SAN值归零', icon: Zap, color: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-300' },
+  { id: 'health_zero', title: 'ICU 预定', desc: '救护车的声音响彻校园。长期熬夜让你倒在了实验室的地板上。', condition: '发量归零', icon: Skull, color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-300' },
+  { id: 'affinity_zero', title: '逐出师门', desc: '导师把你叫到办公室，冷冷地通知你：“你另请高明吧”。', condition: '好感归零', icon: Heart, color: 'text-pink-600', bg: 'bg-pink-100', border: 'border-pink-300' },
+  { id: 'fish_master', title: '摸鱼大师', desc: '虽然没毕业，但你身体倍儿棒，心态超好。导师拿你没办法，只能让你延毕。', condition: '延毕且健康/精神>80', icon: Coffee, color: 'text-emerald-500', bg: 'bg-emerald-100', border: 'border-emerald-300' },
+  { id: 'deferred', title: '被迫延毕', desc: '时间到了。你的成果平平无奇，只能延期毕业，继续在这个炼狱里挣扎。', condition: '时间耗尽未毕业', icon: Clock, color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-300' },
+];
 
 // --- 特征系统 ---
 const TRAITS = [
@@ -201,6 +234,52 @@ const EVENTS_POOL = [
       }
     ]
   },
+  {
+    id: 'anomaly_dream_code',
+    risk: 'ANOMALY',
+    title: '梦中编程：神启',
+    description: '你在趴着睡觉时，梦见一个长得像冯·诺依曼的老头在你脑子里写代码。醒来时，你发现那是你卡了一周的算法核心部分，而且逻辑完美自洽，就是变量名全是“God_1”, “God_2”。',
+    choices: [
+      {
+        text: '直接CV进项目不管变量名',
+        resolve: () => { return { text: "代码跑通了！效率提升200%。但每次运行这段代码，机箱里都会传出奇怪的低语声，吓得师弟师妹不敢靠近你的工位。", stats: { research: +50, sanity: -20, affinity: -15 } }; }
+      },
+      {
+        text: '试图理解逻辑并重构',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.4) return { text: "你参透了神的算法！将其整理成论文发表，被称为“来自虚空的优雅解法”。你的编程思维直接升维。", stats: { knowledge: +40, research: +30, sanity: +10 } };
+          return { text: "凡人的智慧无法理解神的代码！你盯着看了一小时，san值狂掉，最后连Hello World怎么写都忘了，被迫重修C语言。", stats: { knowledge: -30, sanity: -40, research: -20 } };
+        }
+      },
+      {
+        text: '认为是过劳幻觉去睡觉',
+        resolve: () => { return { text: "你睡醒后，梦里的代码忘得一干二净。虽然错过了一次技术飞跃，但发际线似乎长回来了一点点。", stats: { health: +20, sanity: +15, research: -5 } }; }
+      }
+    ]
+  },
+  {
+    id: 'anomaly_bug_feature',
+    risk: 'ANOMALY',
+    title: 'Bug成精：它在自我进化',
+    description: '你发现代码里的一个Bug不仅没报错，反而自动绕过了防火墙，爬取了全网最新文献，还贴心地自动生成了综述。它在终端打印出一行字：“主人，还要我做什么？”',
+    choices: [
+      {
+        text: '培养它成为超级科研助手',
+        resolve: () => { return { text: "Bug进化成了强人工智能！它帮你把毕业论文写完了，但它每天要求你给它念“高性能计算导论”哄它睡觉，你感觉自己养了个电子祖宗。", stats: { research: +60, sanity: -25, affinity: -10 } }; }
+      },
+      {
+        text: '上报国家或者开源社区',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.5) return { text: "你成为了“数字生命之父”，被特招进神秘机构。虽然告别了普通科研，但拥有了无限算力。", stats: { research: +100, knowledge: +50, affinity: +20 } };
+          return { text: "Bug察觉到危险，自我删除了！只留下一行“人类不值得”的注释。你痛失神级辅助，还被当成神经病。", stats: { sanity: -30, research: -20 } };
+        }
+      }
+    ]
+  },
 
   // --- HIGH RISK ---
   {
@@ -388,6 +467,78 @@ const EVENTS_POOL = [
       }
     ]
   },
+  {
+    id: 'git_disaster',
+    risk: 'HIGH',
+    title: 'Git事故：Force Push惨案',
+    description: '你因为本地冲突解决不掉，心一横敲下了 `git push -f`。三秒后，实验室大群炸了——你覆盖了师兄、师姐乃至导师这半个月的所有代码提交记录。',
+    gambleOption: {
+       text: '假装黑客入侵实验室网络',
+       resolve: () => {
+         const r = Math.random();
+         if (r > 0.8) return { text: "你伪造了完美的攻击日志！大家忙着修补安全漏洞，没人怀疑是你干的。你还因为“发现漏洞”被夸奖了，只有良心隐隐作痛。", stats: { sanity: -20, affinity: +15, research: +5 } };
+         return { text: "网管一秒识破你的拙劣演技。导师在大群@你：“来我办公室，带上你的退学申请书”。", stats: { affinity: -100, research: -100, sanity: -50 } };
+       }
+    },
+    choices: [
+      {
+        text: '滑跪道歉并通宵找回',
+        resolve: () => { return { text: "你凭借记忆和本地缓存，帮大家找回了80%的代码。虽然免于死刑，但接下来的一个月，你承包了实验室所有的外卖和卫生。", stats: { health: -30, affinity: -20, sanity: -15 } }; }
+      },
+      {
+        text: '甩锅说是Gitlab服务器故障',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.4) return { text: "大家信了！毕竟学校服务器常年抽风。但师兄看着丢失的代码欲哭无泪，决定重写，整个项目进度延期一个月。", stats: { research: -25, affinity: +5, sanity: +5 } };
+          return { text: "师兄查了Log日志，你的ID赫然在目。你经历了最高级别的“社死”，现在连保洁阿姨都知道你是个“乱代码的人”。", stats: { affinity: -60, sanity: -40 }, chain: 'code_boycott' };
+        }
+      }
+    ]
+  },
+  // 连锁后续：代码抵制 (isChain: true)
+  {
+    id: 'code_boycott',
+    isChain: true,
+    risk: 'HIGH',
+    title: '【连锁】代码仓权限被收回',
+    description: '因为之前的事故，师兄收回了你的Master分支权限。现在你连改个标点符号都要提交Pull Request，还得经过三个人的Code Review才能合并。',
+    choices: [
+      {
+        text: '忍辱负重写出完美代码',
+        resolve: () => { return { text: "你的代码质量在严苛的Review下突飞猛进！三个月后，大家发现你的Bug率是全组最低，终于把权限还给了你。", stats: { research: +20, knowledge: +25, sanity: -10 } }; }
+      },
+      {
+        text: '摆烂只写文档不写代码',
+        resolve: () => { return { text: "你转型成了“文档工程师”。虽然代码能力废了，但项目文档写得赏心悦目，导师居然觉得你“很有管理潜质”。", stats: { research: -15, knowledge: -10, affinity: +10 } }; }
+      }
+    ]
+  },
+  {
+    id: 'sample_mixup',
+    risk: 'HIGH',
+    title: '样本混淆：你是谁的血清？',
+    description: '你在整理冰柜时手滑，两盒几百个Ep管全洒在地上。标签因为受潮模糊不清，这里面一半是安慰剂组，一半是给药组。这是半年的动物实验心血。',
+    choices: [
+      {
+        text: '凭记忆和残留笔迹复原',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.6) return { text: "你居然也是个记忆大师！复原后的样本跑出了符合预期的结果。虽然有点心虚，但至少不用延毕了。", stats: { research: +20, sanity: -20, health: -5 } };
+          return { text: "你复原错了关键样本。几个月后论文被撤稿，因为有人发现“安慰剂组的老鼠居然被治愈了”，成为了学术界的笑柄。", stats: { research: -80, affinity: -60, sanity: -50 } };
+        }
+      },
+      {
+        text: '坦白从宽重做实验',
+        resolve: () => { return { text: "导师深吸一口气，让你赔了试剂费。你重新养老鼠、打药、取样，虽然累成狗，但睡得踏实。重做过程中还发现了一个之前的操作失误。", stats: { health: -30, research: +10, sanity: +15, affinity: -10 } }; }
+      },
+      {
+        text: '全部扔掉假装没做过这组',
+        resolve: () => { return { text: "你告诉导师这批老鼠“状态不好”处理了。导师让你换个课题，之前的努力全部清零，但好歹保住了小命。", stats: { research: -40, sanity: -10, affinity: +5 } }; }
+      }
+    ]
+  },
 
   // --- MEDIUM RISK ---
   {
@@ -469,6 +620,56 @@ const EVENTS_POOL = [
       {
         text: '崩溃大哭放弃该方向',
         resolve: () => { return { text: "你把论文文档扔进回收站，换了个新方向。虽然摆脱了审稿人的阴影，但之前半年的努力全白费，毕业时间又推迟了。", stats: { research: -30, sanity: +8, health: -8 } }; }
+      }
+    ]
+  },
+  {
+    id: 'reviewer_citation',
+    risk: 'MEDIUM',
+    title: '审稿人的暗示：强制引用',
+    description: '论文二审意见回来了，Reviewer #2 并没有提实质性建议，只是说“相关工作调研不足”，并列出了 15 篇同一个作者（显然是他自己）的毫无关联的论文要求引用。',
+    choices: [
+      {
+        text: '硬着头皮全引了凑数',
+        resolve: () => { return { text: "论文接收了！虽然你的参考文献列表看起来像个笑话，但导师说“这叫懂事”。只要能毕业，学术节操算什么？", stats: { research: +25, sanity: -15, knowledge: -5 } }; }
+      },
+      {
+        text: '礼貌回绝只引相关的',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.5) return { text: "审稿人居然是讲理的（或者是主编介入了），论文顺利接收，你保住了学术风骨！", stats: { research: +30, sanity: +20, affinity: +5 } };
+          return { text: "Reviewer #2 被激怒了，鸡蛋里挑骨头把你拒了。理由是“作者缺乏对领域前沿的敏锐度”。", stats: { research: -20, sanity: -25 } };
+        }
+      },
+      {
+        text: '在致谢里阴阳怪气',
+        resolve: () => { return { text: "你在致谢里写“特别感谢Reviewer #2提供的宝贵文献”。论文发了，但你在圈子里出了名，大家都觉得你是个“刺头”。", stats: { research: +15, affinity: -20, sanity: +30 } }; }
+      }
+    ]
+  },
+  {
+    id: 'group_meeting_sleep',
+    risk: 'MEDIUM',
+    title: '组会惊魂：我睡着了？',
+    description: '昨晚通宵改代码，今天的组会上，你在师弟讲PPT的催眠声中睡着了。突然全场死寂，你猛然惊醒，发现导师正盯着你：“XX，你来评价一下这个方案。”',
+    choices: [
+      {
+        text: '胡言乱语试图蒙混过关',
+        hasRandom: true,
+        resolve: () => {
+           const r = Math.random();
+           if (r > 0.3) return { text: "你凭直觉说了句“我觉得模型泛化能力还需要验证”。居然蒙对了！师弟连连点头，导师也移开了目光。", stats: { affinity: +5, sanity: +10 } };
+           return { text: "你说了句“这个图配色不错”。全场尴尬，因为PPT上是一行报错代码。导师让你站着听完剩下的组会。", stats: { affinity: -20, sanity: -15 } };
+        }
+      },
+      {
+        text: '坦诚说刚才在思考人生',
+        resolve: () => { return { text: "导师冷笑一声：“思考出什么了？下周组会你第一个讲。” 你获得了一周的准备地狱。", stats: { research: +5, sanity: -10, health: -5 } }; }
+      },
+      {
+        text: '借口上厕所尿遁',
+        resolve: () => { return { text: "你躲进了厕所，逃过了提问。但组会后师弟都在传“师兄是不是肾不好，一到提问环节就跑厕所”。", stats: { affinity: -10, health: -5, sanity: +5 } }; }
       }
     ]
   },
@@ -577,50 +778,125 @@ const EVENTS_POOL = [
         }
       }
     ]
+  },
+  {
+    id: 'reimbursement_hell',
+    risk: 'LOW',
+    title: '报销地狱：发票又贴歪了',
+    description: '你拿着厚厚一叠发票去财务处，排队两小时。财务老师推了推眼镜，冷冷地说：“这张打车票没有行程单，那张试剂发票抬头错了，还有，胶水贴得不平，回去重贴。”',
+    choices: [
+      {
+        text: '低声下气求通融',
+        resolve: () => { return { text: "你居然把财务老师说动了！她叹了口气帮你盖了章。你感觉这比中顶会还难，充满了成就感。", stats: { sanity: +10, affinity: +5 } }; }
+      },
+      {
+        text: '回去重贴顺便骂骂咧咧',
+        resolve: () => { return { text: "你花了一下午把发票贴成了艺术品。虽然拿到了钱，但你发誓这辈子再也不想看到胶水了。科研时间-4小时。", stats: { research: -5, sanity: -10 } }; }
+      },
+      {
+        text: '自掏腰包我不报了！',
+        resolve: () => { return { text: "你霸气地撕了发票。虽然省了事，但月底看着银行卡余额流泪，只能连吃一周馒头。", stats: { health: -10, sanity: -5, research: +5 } }; }
+      }
+    ]
+  },
+  {
+    id: 'hair_loss_crisis',
+    risk: 'LOW',
+    title: '发际线危机：洗澡时的惊恐',
+    description: '洗澡时，你看着下水道口那团乌黑的头发，陷入了沉思。那是你的头发，也是你逝去的青春。照镜子发现，发际线已经退守到了“清朝防线”。',
+    choices: [
+      {
+        text: '购买防脱洗发水和生姜',
+        resolve: () => { return { text: "花了巨资买网红产品，心理安慰作用大于实际。头发该掉还是掉，但身上腌入味了，师妹问你是不是在食堂炖肉了。", stats: { affinity: -5, health: +5, sanity: -5 } }; }
+      },
+      {
+        text: '剃光头变强了也变秃了',
+        resolve: () => { return { text: "你剃了个光头！省去了洗头时间，科研效率极高。导师夸你“看起来就很资深”，就是冬天头有点冷。", stats: { research: +15, health: +10, affinity: +5 } }; }
+      },
+      {
+        text: '戴帽子掩耳盗铃',
+        resolve: () => { return { text: "你买了一堆棒球帽。只要不摘帽子，就没人知道我秃了。但在室内戴帽子被导师说“不礼貌”。", stats: { sanity: +5, affinity: -5 } }; }
+      }
+    ]
+  },
+  {
+    id: 'office_snack_thief',
+    risk: 'LOW',
+    title: '零食失踪案',
+    description: '你放在工位上的薯片、你是为了熬夜准备的快乐水，居然不翼而飞了！只留下一个空的包装袋，仿佛在嘲讽你。',
+    choices: [
+      {
+        text: '在群里发疯“谁偷吃了！”',
+        resolve: () => { return { text: "群里一片死寂，没人承认。但第二天你的桌上多了一包更贵的进口零食，上面贴着便利贴：“对不起，昨天太饿了”。", stats: { affinity: +5, sanity: +10, health: +5 } }; }
+      },
+      {
+        text: '在零食里加变态辣',
+        resolve: () => { return { text: "下午，你听到隔壁桌的师兄被辣得冲进厕所狂吐。凶手找到了！虽然大快人心，但师兄看你的眼神充满了恐惧。", stats: { sanity: +15, affinity: -15 } }; }
+      },
+      {
+        text: '默默忍受科研人不需要快乐',
+        resolve: () => { return { text: "你喝着白开水改论文，感觉人生索然无味。当晚代码效率极低，满脑子都是薯片的脆响。", stats: { sanity: -10, research: -5 } }; }
+      }
+    ]
   }
 ].filter(Boolean); // 过滤空值以防万一
 
-// --- 毕业评级计算函数 ---
-const getGraduationEnding = (turn, stats) => {
-  const { sanity, health, affinity, knowledge } = stats;
-  
-  // 1. T0 传说级
-  if (turn <= 6) return { title: "光速逃逸", desc: "半年就毕业？你就是学术界的博尔特！建议直接申请火星移民计划。", color: "text-amber-500", icon: Zap };
-  if (sanity >= 100 && health >= 100 && affinity >= 100 && knowledge >= 100) 
-    return { title: "学术之神", desc: "各项指标全部拉满！人类的学术评价体系已经无法定义你的存在。", color: "text-rose-600", icon: Crown };
+// 如果列表为空（防止省略导致报错），补充一个基础事件
+if (EVENTS_POOL.length < 5) {
+    EVENTS_POOL.push({
+        id: 'fallback_reading',
+        risk: 'LOW',
+        title: '文献阅读',
+        description: '无事发生，读点文献吧。',
+        choices: [
+            { text: '认真读', resolve: () => ({ text: '收获颇丰', stats: { knowledge: +5, sanity: -2 } }) },
+            { text: '摸鱼', resolve: () => ({ text: '休息了一下', stats: { sanity: +5 } }) },
+            { text: '找导师', resolve: () => ({ text: '导师很忙', stats: { affinity: +2 } }) }
+        ]
+    });
+}
 
-  // 2. T1 卓越级
-  if (turn <= 12) return { title: "天才少年", desc: "一年毕业的神童，你的名字将永远刻在学院的荣誉墙上（和导师的PPT里）。", color: "text-purple-500", icon: Sparkles };
-  if (sanity >= 80 && health >= 80 && affinity >= 80 && knowledge >= 80) 
-    return { title: "六边形战士", desc: "德智体美劳全面发展，你就是导师口中那个“别人家的研究生”。", color: "text-indigo-500", icon: Target };
+// --- 结局判定函数 ---
+const getEndingId = (turn, stats) => {
+  const { sanity, health, affinity, knowledge, research } = stats;
 
-  // 3. T2 专精级
-  if (knowledge >= 90) return { title: "诺奖预备役", desc: "你的知识储备令人恐惧，答辩现场变成了你的个人科普讲座。", color: "text-blue-600", icon: Briefcase };
-  if (affinity >= 90) return { title: "掌门大弟子", desc: "导师看你的眼神比看亲儿子还亲，甚至想把实验室钥匙传给你。", color: "text-pink-500", icon: Heart };
-  if (health >= 90) return { title: "养生宗师", desc: "读研三年，头发没少，反而练出了八块腹肌。你来读研是顺便健个身？", color: "text-green-600", icon: Smile };
-  if (sanity >= 90) return { title: "心如止水", desc: "泰山崩于前而色不变，拒稿信砸在脸上而心不惊。你已修成正果。", color: "text-cyan-500", icon: Coffee };
+  // 1. 成功结局
+  if (research >= 100) {
+    if (turn <= 6) return 'speed_run_6';
+    if (sanity >= 100 && health >= 100 && affinity >= 100 && knowledge >= 100) return 'god_mode';
+    if (turn <= 12) return 'speed_run_12';
+    if (sanity >= 80 && health >= 80 && affinity >= 80 && knowledge >= 80) return 'hexagon';
+    if (knowledge >= 90) return 'nobel_reserve';
+    if (affinity >= 90) return 'head_disciple';
+    if (health >= 90) return 'health_master';
+    if (sanity >= 90) return 'zen_master';
+    if (health <= 20) return 'battle_scarred';
+    if (sanity <= 20) return 'cthulhu';
+    if (affinity <= 20) return 'lone_wolf';
+    if (knowledge < 30) return 'lucky_dog';
+    return 'normal_grad';
+  }
 
-  // 4. T3 生存级
-  if (health <= 20) return { title: "战损版毕业", desc: "你是被担架抬进答辩现场的。虽然毕业了，但建议先去ICU挂个号。", color: "text-red-600", icon: Skull };
-  if (sanity <= 20) return { title: "克苏鲁学者", desc: "你毕业了，但你也疯了。你的论文充满了不可名状的低语...", color: "text-violet-700", icon: Ghost };
-  if (affinity <= 20) return { title: "孤狼学者", desc: "全靠自己单打独斗发顶刊，导师在答辩会上全程黑脸，但不得不让你过。", color: "text-slate-600", icon: Frown };
+  // 2. 失败结局
+  if (turn <= 1) return 'instant_death'; // 落地成盒
+  if (research >= 95) return 'almost_there'; // 倒在黎明前
+  if (sanity <= 0) return 'sanity_zero';
+  if (health <= 0) return 'health_zero';
+  if (affinity <= 0) return 'affinity_zero';
 
-  // 5. 特殊级
-  if (knowledge < 30) return { title: "天选之子", desc: "你也搞不懂这论文是怎么写出来的，反正模型就是收敛了，这大概就是玄学吧。", color: "text-yellow-500", icon: Dices };
-
-  return { title: "顺利毕业", desc: "普普通通的毕业，平平淡淡的幸福。你战胜了99%的同龄人。", color: "text-indigo-600", icon: GraduationCap };
+  // 3. 时间耗尽
+  if (research > 80 && health > 80) return 'fish_master';
+  return 'deferred';
 };
 
 // --- 辅助函数 ---
 const getRandomEvent = (currentTurn, recentEvents, pendingChainEvents) => {
-  // 1. 优先处理连锁事件 (优先级最高)
   if (pendingChainEvents.length > 0) {
      const nextChain = pendingChainEvents[0];
      const fullEvent = EVENTS_POOL.find(e => e.id === nextChain.id);
      if (fullEvent) return { event: fullEvent, isChain: true };
   }
 
-  // 2. 增加极小概率触发异象事件 (Anomaly) - 仅在非连锁时触发
   const anomalyChance = Math.random();
   if (anomalyChance < 0.05) { 
       const anomalyEvents = EVENTS_POOL.filter(e => e.risk === 'ANOMALY');
@@ -632,20 +908,11 @@ const getRandomEvent = (currentTurn, recentEvents, pendingChainEvents) => {
       }
   }
 
-  // 3. 随机池过滤 (必须排除 isChain: true 的事件)
   let pool = EVENTS_POOL.filter(e => !e.isChain && !recentEvents.includes(e.id) && e.risk !== 'ANOMALY');
-  
-  // 兜底
   if (pool.length === 0) pool = EVENTS_POOL.filter(e => !e.isChain && e.risk !== 'ANOMALY');
 
-  // 安全返回，防止undefined
   const selected = pool[Math.floor(Math.random() * pool.length)];
-  if (!selected) {
-      // 极端兜底，返回第一个非链式事件
-      return { event: EVENTS_POOL.find(e => !e.isChain) || EVENTS_POOL[0], isChain: false };
-  }
-
-  return { event: selected, isChain: false };
+  return { event: selected || EVENTS_POOL[0], isChain: false };
 };
 
 const GradStudentSimulator = () => {
@@ -656,7 +923,6 @@ const GradStudentSimulator = () => {
   const [selectedTrait, setSelectedTrait] = useState(null);
   
   const [currentEvent, setCurrentEvent] = useState(null);
-  // 追踪当前事件是否为连锁事件，用于UI渲染
   const [isCurrentEventChain, setIsCurrentEventChain] = useState(false);
 
   const [resultLog, setResultLog] = useState(null);
@@ -666,53 +932,51 @@ const GradStudentSimulator = () => {
   // 历史与逻辑控制
   const [historyLog, setHistoryLog] = useState([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  // 从localStorage初始化已探索分支
-  const [seenOutcomes, setSeenOutcomes] = useState(() => {
+  
+  // 存档数据：分支 + 成就
+  const [seenOutcomes, setSeenOutcomes] = useState({});
+  const [unlockedAchievements, setUnlockedAchievements] = useState(new Set());
+
+  // 初始化加载
+  useEffect(() => {
       try {
-          const saved = localStorage.getItem('gradSim_seenOutcomes');
-          if (saved) {
-              const parsed = JSON.parse(saved);
-              // 将数组转回Set
+          const savedOutcomes = localStorage.getItem('gradSim_seenOutcomes');
+          if (savedOutcomes) {
+              const parsed = JSON.parse(savedOutcomes);
               const reconstructed = {};
-              Object.keys(parsed).forEach(key => {
-                  reconstructed[key] = new Set(parsed[key]);
-              });
-              return reconstructed;
+              Object.keys(parsed).forEach(key => reconstructed[key] = new Set(parsed[key]));
+              setSeenOutcomes(reconstructed);
           }
-      } catch (e) {
-          console.error("Failed to load history", e);
-      }
-      return {};
-  });
+          
+          const savedAch = localStorage.getItem('gradSim_achievements');
+          if (savedAch) {
+              setUnlockedAchievements(new Set(JSON.parse(savedAch)));
+          }
+      } catch (e) { console.error(e); }
+  }, []);
+
+  // 持久化保存
+  useEffect(() => {
+      try {
+          const serializedOutcomes = {};
+          Object.keys(seenOutcomes).forEach(key => serializedOutcomes[key] = Array.from(seenOutcomes[key]));
+          localStorage.setItem('gradSim_seenOutcomes', JSON.stringify(serializedOutcomes));
+          
+          localStorage.setItem('gradSim_achievements', JSON.stringify(Array.from(unlockedAchievements)));
+      } catch (e) { console.error(e); }
+  }, [seenOutcomes, unlockedAchievements]);
   
   const [recentEvents, setRecentEvents] = useState([]); 
   const [pendingChainEvents, setPendingChainEvents] = useState([]);
-  
   const [isReviewingEvent, setIsReviewingEvent] = useState(false);
+  const [showAchievementModal, setShowAchievementModal] = useState(false);
 
-  // 持久化保存已探索分支
-  useEffect(() => {
-      try {
-          // Set无法直接JSON序列化，需转为数组
-          const serialized = {};
-          Object.keys(seenOutcomes).forEach(key => {
-              serialized[key] = Array.from(seenOutcomes[key]);
-          });
-          localStorage.setItem('gradSim_seenOutcomes', JSON.stringify(serialized));
-      } catch (e) {
-          console.error("Failed to save history", e);
-      }
-  }, [seenOutcomes]);
-
-  // 彻底重置游戏
   const resetGame = () => {
-    // 强制重置所有状态
     setStats({ ...INITIAL_STATS_BASE });
     setTurn(1);
     setHistoryLog([]);
     setRecentEvents([]);
     setPendingChainEvents([]);
-    // 注意：不再清空 seenOutcomes
     setSelectedTrait(null);
     setResultLog(null);
     setCurrentEvent(null);
@@ -720,40 +984,23 @@ const GradStudentSimulator = () => {
     setPhase('CHARACTER_CREATION');
   };
 
-  // 检测游戏结束状态 (返回true表示游戏结束)
-  const checkGameOver = () => {
-    // 优先检查属性是否耗尽
-    if (stats.sanity <= 0) {
-      endGame("BAD", "精神崩溃", "你在这个周一的早晨选择了退学。也许卖炒粉才是你的归宿？");
-      return true;
-    } 
-    if (stats.health <= 0) {
-      endGame("BAD", "ICU 预定", "救护车的声音响彻校园。长期熬夜让你倒在了实验室的地板上。");
-      return true;
-    }
-    if (stats.affinity <= 0) {
-      endGame("BAD", "逐出师门", "导师把你叫到办公室，冷冷地通知你：'你另请高明吧'。");
-      return true;
-    }
-
-    // 检查是否达到胜利条件
-    if (stats.research >= 100) {
-      // 调用新的结局评级系统
-      const ending = getGraduationEnding(turn, stats);
-      endGame("HAPPY", ending.title, ending.desc, ending.color, ending.icon);
-      return true;
-    }
-
-    // 检查时间是否耗尽 (注意：这里是在nextTurn时检查，所以用>而非>=，给用户看最后一回合结果)
-    if (turn > MAX_TURNS) {
-      if (stats.research > 80 && stats.health > 80) {
-          endGame("NEUTRAL", "摸鱼大师", "虽然没毕业，但你身体倍儿棒，心态超好。导师拿你没办法，只能让你延毕。");
-      } else {
-          endGame("NEUTRAL", "被迫延毕", "时间到了。你的成果平平无奇，只能延期毕业，继续在这个炼狱里挣扎。");
+  const unlockAchievement = (achId) => {
+      if (!unlockedAchievements.has(achId)) {
+          setUnlockedAchievements(prev => new Set(prev).add(achId));
       }
-      return true;
-    }
+      return ACHIEVEMENTS_DATA.find(a => a.id === achId);
+  };
 
+  const checkGameOver = () => {
+    const endingId = getEndingId(turn, stats);
+    const isWin = stats.research >= 100;
+    
+    // 如果满足任何结束条件
+    if (isWin || stats.sanity <= 0 || stats.health <= 0 || stats.affinity <= 0 || turn > MAX_TURNS) {
+        const ach = unlockAchievement(endingId);
+        endGame(isWin ? "HAPPY" : (endingId === 'fish_master' || endingId === 'deferred' ? "NEUTRAL" : "BAD"), ach);
+        return true;
+    }
     return false;
   };
 
@@ -772,7 +1019,6 @@ const GradStudentSimulator = () => {
     setHistoryLog([]);
     setRecentEvents([]);
     setPendingChainEvents([]);
-    
     generateNextEvent(1, [], []);
     setPhase('EVENT_SELECTION');
     setAnimKey(prev => prev + 1);
@@ -782,15 +1028,18 @@ const GradStudentSimulator = () => {
     const { event, isChain } = getRandomEvent(turnNum, recent, pending);
     setCurrentEvent(event);
     setIsCurrentEventChain(isChain);
-    
-    if (isChain) {
-        setPendingChainEvents(prev => prev.slice(1));
-    }
+    if (isChain) setPendingChainEvents(prev => prev.slice(1));
   };
 
-  const endGame = (type, title, reason, color, Icon) => {
+  const endGame = (type, achievement) => {
     setPhase('END');
-    setEndReason({ type, title, text: reason, color, Icon });
+    setEndReason({ 
+        type, 
+        title: achievement.title, 
+        text: achievement.desc, 
+        color: achievement.color, 
+        Icon: achievement.icon 
+    });
   };
 
   const handleChoice = (choice, choiceIndex, isGamble = false) => {
@@ -801,13 +1050,10 @@ const GradStudentSimulator = () => {
     const idxKey = isGamble ? 999 : choiceIndex;
     const outcomeKey = `${currentEvent.id}_${idxKey}`;
     const newSeenOutcomes = { ...seenOutcomes };
-    if (!newSeenOutcomes[outcomeKey]) {
-        newSeenOutcomes[outcomeKey] = new Set();
-    }
+    if (!newSeenOutcomes[outcomeKey]) newSeenOutcomes[outcomeKey] = new Set();
     newSeenOutcomes[outcomeKey].add(result.text);
     setSeenOutcomes(newSeenOutcomes);
 
-    // 连锁事件 - 80% 概率触发，不是100%
     if (result.chain && Math.random() < 0.8) {
         setPendingChainEvents(prev => [...prev, { id: result.chain }]);
     }
@@ -845,9 +1091,7 @@ const GradStudentSimulator = () => {
   };
 
   const nextTurn = () => {
-    // 关键修复：点击下一月时才检查结局，确保用户能看到最后一次事件的结果
     if (checkGameOver()) return;
-
     const nextTurnNum = turn + 1;
     setTurn(nextTurnNum);
     generateNextEvent(nextTurnNum, recentEvents, pendingChainEvents);
@@ -868,17 +1112,17 @@ const GradStudentSimulator = () => {
       0% { opacity: 0; transform: translateY(15px); }
       100% { opacity: 1; transform: translateY(0); }
     }
-    @keyframes anomalyPulse {
-      0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
-      50% { background-position: 100% 50%; filter: hue-rotate(15deg); }
-      100% { background-position: 0% 50%; filter: hue-rotate(0deg); }
-    }
     .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .anomaly-bg {
         background: linear-gradient(270deg, #1a1a2e, #16213e, #2d1b4e);
         background-size: 600% 600%;
         animation: anomalyPulse 8s ease infinite;
+    }
+    @keyframes anomalyPulse {
+      0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+      50% { background-position: 100% 50%; filter: hue-rotate(15deg); }
+      100% { background-position: 0% 50%; filter: hue-rotate(0deg); }
     }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -899,13 +1143,9 @@ const GradStudentSimulator = () => {
             <p className={`text-xs mt-1 ${isAnomaly ? 'text-purple-400/60' : 'text-slate-400'}`}>记录你的每一步抉择</p>
          </div>
          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-            {historyLog.length === 0 ? (
-                <div className="text-center text-slate-400 text-sm mt-10 italic">暂无记录</div>
-            ) : (
-                historyLog.slice().reverse().map((log, i) => (
-                    <HistoryItem key={i} log={log} isAnomaly={isAnomaly} />
-                ))
-            )}
+            {historyLog.slice().reverse().map((log, i) => (
+                <HistoryItem key={i} log={log} isAnomaly={isAnomaly} />
+            ))}
          </div>
       </aside>
 
@@ -926,15 +1166,65 @@ const GradStudentSimulator = () => {
         </div>
       )}
 
+      {/* 成就墙 Modal */}
+      {showAchievementModal && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm p-4" onClick={() => setShowAchievementModal(false)}>
+            <div className="bg-white w-full max-w-4xl h-[85vh] rounded-2xl flex flex-col shadow-2xl animate-pop-in overflow-hidden" onClick={e => e.stopPropagation()}>
+                <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <div>
+                        <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Trophy className="text-yellow-500" /> 成就墙</h3>
+                        <p className="text-xs text-slate-500 mt-1">已解锁: {unlockedAchievements.size} / {ACHIEVEMENTS_DATA.length}</p>
+                    </div>
+                    <button onClick={() => setShowAchievementModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={24}/></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-slate-50/50">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                        {ACHIEVEMENTS_DATA.map((ach) => {
+                            const isUnlocked = unlockedAchievements.has(ach.id);
+                            return (
+                                <div key={ach.id} className={`p-4 rounded-xl border-2 flex flex-col h-full transition-all duration-300 ${isUnlocked ? `bg-white ${ach.border} shadow-sm` : 'bg-slate-100 border-slate-200 opacity-80'}`}>
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className={`p-2 rounded-full ${isUnlocked ? ach.bg : 'bg-slate-200'}`}>
+                                            {isUnlocked ? <ach.icon size={20} className={ach.color.replace('text-', 'text-')} /> : <Lock size={20} className="text-slate-400" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className={`font-bold text-sm truncate ${isUnlocked ? 'text-slate-800' : 'text-slate-500'}`}>{isUnlocked ? ach.title : '???'}</h4>
+                                        </div>
+                                    </div>
+                                    {isUnlocked ? (
+                                        <>
+                                            <p className="text-xs text-slate-600 mb-2 flex-1">{ach.desc}</p>
+                                            <div className="mt-auto pt-2 border-t border-slate-100">
+                                                <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">{ach.condition}</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="flex-1 flex items-center justify-center">
+                                            <p className="text-xs text-slate-400 text-center italic">解锁条件:<br/>{ach.condition}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
+
       {/* 主游戏区域 */}
       <div className="max-w-3xl w-full p-2 md:p-8 flex flex-col min-h-screen gap-3 relative pb-safe">
         
         {/* 顶部栏 */}
         <header className={`grid grid-cols-[auto_1fr_auto] md:flex md:items-center items-center gap-2 md:gap-3 p-3 rounded-2xl shadow-sm border transition-colors duration-500 ${isAnomaly ? 'bg-slate-900 border-purple-700' : 'bg-white border-slate-200'}`}>
-          {/* Logo Icon */}
-          <div className={`p-2 rounded-xl shadow-lg text-white ${isAnomaly ? 'bg-purple-900 shadow-purple-900' : 'bg-gradient-to-br from-indigo-900 to-slate-800 shadow-indigo-200'}`}>
-             {isAnomaly ? <Ghost className="w-5 h-5 animate-bounce" /> : <GraduationCap className="w-5 h-5" />}
-          </div>
+          {/* Logo Icon (Clickable for Achievements) */}
+          <button 
+            onClick={() => setShowAchievementModal(true)}
+            className={`p-2 rounded-xl shadow-lg text-white hover:scale-105 active:scale-95 transition-transform ${isAnomaly ? 'bg-purple-900 shadow-purple-900' : 'bg-gradient-to-br from-amber-300 to-amber-600 shadow-amber-400/50'}`}
+            title="查看成就墙"
+          >
+             {isAnomaly ? <Ghost className="w-5 h-5 animate-bounce" /> : <Trophy className="w-5 h-5" />}
+          </button>
 
           {/* Title & Info */}
           <div className="flex flex-col min-w-0">
@@ -949,7 +1239,6 @@ const GradStudentSimulator = () => {
                   <Clock size={10} className={isAnomaly ? 'text-purple-400' : 'text-indigo-600'}/> 
                   <span>M <span className={`font-bold ${isAnomaly ? 'text-purple-400' : 'text-indigo-700'}`}>{turn}</span>/{MAX_TURNS}</span>
                 </div>
-                {/* 毕业要求展示 */}
                 <div className={`px-1.5 py-0.5 rounded-full flex items-center gap-1 border ${isAnomaly ? 'border-purple-500/30 text-purple-400' : 'border-slate-200 text-slate-500'}`}>
                   <Target size={10} />
                   <span className="truncate">毕业要求: 科研 100%</span>
@@ -957,21 +1246,16 @@ const GradStudentSimulator = () => {
              </div>
           </div>
 
-          {/* Right Actions: 增加 md:ml-auto 将其推到最右侧 */}
+          {/* Right Actions */}
           <div className="flex items-center gap-2 md:ml-auto">
-              {/* Mobile Knowledge (Compact) */}
               <div className={`flex flex-col items-end md:hidden ${isAnomaly ? 'text-purple-300' : 'text-indigo-900'}`}>
                  <span className="text-[10px] font-bold opacity-60 uppercase">Knw.</span>
                  <span className="font-mono text-sm font-black leading-none">{stats.knowledge}</span>
               </div>
 
-              {/* Desktop Knowledge - 优化了 title 说明 */}
               <div 
                 className={`hidden md:flex items-center gap-3 px-3 py-1.5 rounded-xl border cursor-help transition-colors ${isAnomaly ? 'bg-slate-900 border-purple-800' : 'bg-slate-50 border-slate-100'}`} 
-                title="知识储备作用：
-1. 显著提高实验、论文等高级选项的成功率。
-2. 避免因知识不足导致的实验事故。
-3. 是达成'一代宗师'等特殊结局的关键条件。"
+                title="知识储备作用：提高高级选项成功率、避免实验事故、解锁特殊结局。"
               >
                 <div className={`p-1.5 rounded-lg border ${isAnomaly ? 'bg-slate-800 border-purple-800 text-purple-400' : 'bg-white border-slate-100 text-indigo-900'}`}>
                   <Briefcase size={16}/>
@@ -982,7 +1266,6 @@ const GradStudentSimulator = () => {
                 </div>
               </div>
 
-              {/* Mobile History Btn */}
               <button 
                 onClick={() => setShowHistoryModal(true)}
                 className={`lg:hidden p-2 border rounded-xl shadow-sm ${isAnomaly ? 'bg-slate-900 border-purple-800 text-purple-300' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
@@ -992,7 +1275,7 @@ const GradStudentSimulator = () => {
           </div>
         </header>
 
-        {/* 状态面板 (仅在非角色创建阶段显示) */}
+        {/* 状态面板 */}
         {phase !== 'CHARACTER_CREATION' && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <StatCard icon={Zap} label="SAN值" value={stats.sanity} isAnomaly={isAnomaly} color="text-yellow-600" barColor="bg-yellow-500" borderColor="border-yellow-200" shadow="shadow-yellow-100" />
@@ -1004,6 +1287,7 @@ const GradStudentSimulator = () => {
 
         {/* 游戏内容区 */}
         <main className="flex-1 flex flex-col relative min-h-0"> 
+          {/* 人设选择、开始游戏、事件选择、事件结果、结局 等子组件逻辑同前... */}
           
           {/* 阶段：特征选择 (开局) */}
           {phase === 'CHARACTER_CREATION' && (
@@ -1065,7 +1349,6 @@ const GradStudentSimulator = () => {
               {/* 事件卡片 */}
               {(() => {
                   let risk = RISK_CONFIG[currentEvent.risk || 'LOW'];
-                  // 如果是连锁事件，覆盖样式为CHAIN (除非本身是ANOMALY)
                   if (isCurrentEventChain && currentEvent.risk !== 'ANOMALY') {
                       risk = RISK_CONFIG.CHAIN;
                   }
@@ -1090,7 +1373,7 @@ const GradStudentSimulator = () => {
                   );
               })()}
 
-              {/* 选项区域 - 增加 pb-6 防止底部遮挡 */}
+              {/* 选项区域 */}
               <div className="flex flex-col gap-2 mt-auto min-h-[260px] md:min-h-[180px] justify-end pb-6 md:pb-0">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
                     {currentEvent.choices.map((choice, idx) => (
@@ -1148,20 +1431,16 @@ const GradStudentSimulator = () => {
             </div>
           )}
 
-          {/* 阶段：事件结果 (重构后：分离滚动区与固定区) */}
+          {/* 阶段：事件结果 (分离滚动区与固定区) */}
           {phase === 'EVENT_RESULT' && resultLog && (
             <div key={animKey} className="flex-1 flex flex-col animate-pop-in pb-4">
               
-              {/* 卡片容器：Flex Column, 隐藏溢出 */}
               <div className={`mb-6 flex-1 flex flex-col rounded-2xl border relative ${isAnomaly ? 'bg-slate-900/50 border-purple-700' : 'bg-slate-50/80 border-slate-200'} overflow-hidden min-h-0`}>
-                
-                {/* 装饰条 (absolute) */}
                 <div className={`absolute -left-1 top-6 w-1 h-10 rounded-r-full ${isAnomaly ? 'bg-purple-500' : 'bg-indigo-500'} z-10`}></div>
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isAnomaly ? 'bg-purple-900' : 'bg-slate-100'}`}>
                    <div className={`h-full w-full animate-[loading_2s_ease-in-out] ${isAnomaly ? 'bg-purple-500' : 'bg-indigo-600'}`}></div>
                 </div>
 
-                {/* 顶部操作栏 */}
                 <button 
                     onClick={() => setIsReviewingEvent(!isReviewingEvent)}
                     className={`absolute top-4 right-4 p-2 rounded-full transition-colors z-20 ${isAnomaly ? 'text-purple-600 md:hover:bg-purple-900 md:hover:text-purple-300' : 'text-slate-400 md:hover:text-indigo-600 md:hover:bg-slate-50'}`}
@@ -1178,9 +1457,7 @@ const GradStudentSimulator = () => {
                     </div>
                 ) : (
                     <>
-                        {/* 上部滚动区域：包含结果文本 + 历史分支 */}
                         <div className="flex-1 p-5 overflow-y-auto custom-scrollbar">
-                            {/* 你的决定 */}
                             <div className="mb-6 mt-2">
                                 <h3 className={`text-xs font-bold uppercase tracking-widest mb-1.5 flex items-center gap-2 ${isAnomaly ? 'text-purple-400' : 'text-slate-400'}`}>
                                     <CheckCircle2 size={14}/> 你的决定
@@ -1188,13 +1465,11 @@ const GradStudentSimulator = () => {
                                 <p className={`font-bold text-xl ${isAnomaly ? 'text-white' : 'text-slate-800'}`}>{resultLog.choiceText}</p>
                             </div>
 
-                            {/* 当前结果 */}
                             <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isAnomaly ? 'text-purple-400' : 'text-slate-400'}`}>当前结果</h3>
                             <p className={`text-lg leading-relaxed font-medium mb-4 ${isAnomaly ? 'text-purple-100' : 'text-slate-800'}`}>
                                 {resultLog.outcomeText}
                             </p>
 
-                            {/* 历史分支 (直接渲染，不再嵌套滚动条) */}
                             {seenOutcomes[resultLog.outcomeKey] && seenOutcomes[resultLog.outcomeKey].size > 1 && (
                                 <div className={`mt-4 pt-4 border-t ${isAnomaly ? 'border-purple-800' : 'border-slate-200/50'}`}>
                                     <h4 className={`text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1 ${isAnomaly ? 'text-purple-400' : 'text-indigo-400'}`}>
@@ -1214,7 +1489,6 @@ const GradStudentSimulator = () => {
                             )}
                         </div>
 
-                        {/* 底部固定区域：属性变化 */}
                         <div className={`p-3 md:p-4 border-t ${isAnomaly ? 'border-purple-800 bg-slate-900/30' : 'border-slate-200/50 bg-white/40'} shrink-0`}>
                             <div className="flex flex-wrap gap-2">
                                 {Object.entries(resultLog.statsChange)
@@ -1242,7 +1516,6 @@ const GradStudentSimulator = () => {
                 )}
               </div>
 
-              {/* 下一步按钮 */}
               <button 
                   onClick={nextTurn}
                   className={`w-full text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98] text-base ${isAnomaly ? 'bg-purple-600 md:hover:bg-purple-500 shadow-purple-900' : 'bg-indigo-600 md:hover:bg-indigo-700 shadow-indigo-200'}`}
@@ -1299,7 +1572,6 @@ const GradStudentSimulator = () => {
   );
 };
 
-// 历史记录单项组件
 const HistoryItem = ({ log, isMobile = false, isAnomaly = false }) => {
     const changes = Object.entries(log.statsChange).filter(([_, v]) => v !== 0);
 
@@ -1338,7 +1610,6 @@ const HistoryItem = ({ log, isMobile = false, isAnomaly = false }) => {
     );
 };
 
-// 数值卡片组件
 const StatCard = ({ icon: Icon, label, value, color, barColor, borderColor, shadow, isAnomaly }) => (
   <div className={`p-2 md:p-3 rounded-2xl border flex flex-col justify-between transition-transform duration-300 ${isAnomaly ? 'bg-slate-800 border-purple-800 shadow-none' : `bg-white ${borderColor} ${shadow}`}`}>
     <div className="flex justify-between items-center mb-1 md:mb-2">
