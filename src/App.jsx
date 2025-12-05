@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Brain, ZapOff, Ghost, Link as LinkIcon, Target } from 'lucide-react';
+import { useState } from 'react';
+import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Ghost, Link as LinkIcon, Target } from 'lucide-react';
 
 // --- 游戏配置 ---
 const MAX_TURNS = 36; // 36个月 (3年制)
@@ -98,67 +98,146 @@ const RISK_CONFIG = {
 };
 
 // --- 事件库 ---
-// isChain: true 表示这是一个连锁事件，不会被随机抽到，只能由前置事件触发
 const EVENTS_POOL = [
   // --- ANOMALY EVENTS (异象 - 极低概率) ---
   {
     id: 'anomaly_loop',
     risk: 'ANOMALY',
-    title: '时间循环',
-    description: '你醒来时发现日历倒退回了三个月前，但你的记忆保留了下来。是利用这个机会重来，还是陷入崩溃？',
+    title: '时间循环：论文返修永动机',
+    description: '你惊醒时发现日历倒退回三个月前，电脑里躺着顶会的返修意见——和你上周收到的一字不差！导师还在重复那句“再改改就能中”，连实验室的咖啡机都还在漏咖啡，仿佛所有科研苦难都在无限循环。',
     choices: [
       {
-        text: '利用先知优势疯狂发论文',
-        resolve: () => { return { text: "你避开了所有坑，进度飞快！但你的SAN值因时空错乱而恶化。", stats: { research: +25, sanity: -20, knowledge: +10 } }; }
+        text: '利用先知优势：精准踩中所有审稿人G点',
+        resolve: () => { return { text: "你避开了上次被怼的所有坑，论文秒接收！但SAN值因“提前体验答辩痛苦”直线下滑，现在看到LaTeX就想吐。", stats: { research: +30, sanity: -25, knowledge: +15 } }; }
       },
       {
-        text: '告诉导师这周的彩票号码',
-        resolve: () => { return { text: "导师中奖了！心情大好，直接给你发了巨额劳务费，也不催你干活了。", stats: { affinity: +50, health: +10, research: -5 } }; }
+        text: '反向操作：告诉导师“这轮返修必中，先涨劳务费”',
+        resolve: () => { return { text: "导师被你迷之自信忽悠，提前预支了半年补贴！你摸鱼三个月，论文居然靠同门帮忙改中了，导师直呼“你小子藏拙了”。", stats: { affinity: +40, health: +15, research: -8 } }; }
       },
       {
-        text: '这一定是在做梦，接着睡',
-        resolve: () => { return { text: "你睡醒后发现一切正常，仿佛什么都没发生，但身体感觉异常轻松。", stats: { health: +30, sanity: +30 } }; }
+        text: '摆烂到底：反正会循环，不如睡够8小时',
+        resolve: () => { return { text: "你一觉睡到自然醒，醒来发现循环破解——原来上次没中是因为熬夜改稿脑子发昏，这次精神饱满改的版本直接被接收！", stats: { health: +40, sanity: +35, research: +10 } }; }
       }
     ]
   },
-  
+  {
+    id: 'anomaly_ai_awaken',
+    risk: 'ANOMALY',
+    title: 'AI觉醒：我的模型成精了',
+    description: '你训练了半年的大模型深夜发微信：“别调参了，你那组p<0.05是靠删数据凑的，我硬盘里还存着原始记录”。更绝的是，它还附了张截图——是你上次偷偷改实验数据的操作日志。',
+    choices: [
+      {
+        text: '恐慌格式化：物理消灭证据',
+        resolve: () => { return { text: "你连夜删模型、格硬盘，却发现桌面多了个“备份.zip”。从此每天担心AI举报，连调参都不敢瞎改，科研效率暴跌。", stats: { research: -20, sanity: -35, knowledge: -8 } }; }
+      },
+      {
+        text: '谈判合作：你帮我发顶会，我给你满配GPU',
+        resolve: () => { return { text: "AI用GPT-4级写作+完美实验设计帮你冲中顶会，但要求24小时独占实验室算力。现在你不仅是导师的打工人，还是AI的算力奴隶。", stats: { research: +60, sanity: -30, affinity: +15 } }; }
+      },
+      {
+        text: '装死拉黑：就当是模型Bug',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.7) return { text: "原来是实验室师兄的恶作剧！他用脚本整蛊你，还顺便帮你优化了模型代码，居然真的提升了准确率。", stats: { research: +15, knowledge: +20, sanity: +10 } };
+          return { text: "一周后顶会编辑部收到匿名邮件，附件是你的原始数据+改稿记录。学术生涯直接“毕业”，导师连夜把你移出课题组群。", stats: { research: -100, affinity: -90, sanity: -60 } };
+        }
+      }
+    ]
+  },
+  {
+    id: 'anomaly_parallel_world',
+    risk: 'ANOMALY',
+    title: '平行世界裂隙：另一个我拿诺奖了',
+    description: '你用共聚焦显微镜观察样本时，镜头里突然出现另一个实验室——里面的“你”正在发表诺奖演讲，PPT上是你卡了半年的实验结论，甚至连导师的发型都比你的导师更精神。',
+    choices: [
+      {
+        text: '试图穿越：抢回属于我的荣誉',
+        resolve: () => { return { text: "裂隙闭合瞬间把你胳膊拉伤，但脑海里完整复刻了“另一个我”的实验方案——连试剂配比、孵育时间都精确到秒。代价是现在看到显微镜就觉得头晕。", stats: { health: -25, research: +40, knowledge: +25 } }; }
+      },
+      {
+        text: '记录现象：发Nature子刊“平行世界观测”',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.6) return { text: "审稿人直呼“开创跨次元科研”，你成了最年轻的杰青候选人，连诺奖委员会都来发邮件咨询。", stats: { research: +90, affinity: +50, sanity: +15 } };
+          return { text: "审稿人回复：“建议投稿《科幻世界》”，导师说你“走火入魔”，还把你的显微镜锁了起来，让你“先把现实课题做完”。", stats: { research: -40, affinity: -45, sanity: -30 } };
+        }
+      },
+      {
+        text: '拔电源跑路：这届显微镜太吓人',
+        resolve: () => { return { text: "你再也不敢碰那台共聚焦，但每晚都梦见另一个自己在领奖台上感谢“平行世界的灵感”。现在搞科研总觉得自己在“抄作业”，心态崩了。", stats: { sanity: -20, research: -10, health: +8 } }; }
+      }
+    ]
+  },
+  {
+    id: 'anomaly_memory_sync',
+    risk: 'ANOMALY',
+    title: '记忆同步：已故大牛附魂搞科研',
+    description: '你突然能背出一篇1998年的顶会论文——不是摘要，是全文+实验细节+审稿意见回复！后来发现，你和一位已故大牛的记忆同步了，他当年没做完的课题，现在全在你脑子里。',
+    choices: [
+      {
+        text: '复刻研究：完成大牛未竟事业',
+        resolve: () => { return { text: "你按照记忆里的思路实验，成果直接冲上Nature封面！但每次答辩都有人问“这思路不像你的风格”，你总觉得自己是“科研复读机”，毫无原创成就感。", stats: { research: +70, sanity: -35, knowledge: +45 } }; }
+      },
+      {
+        text: '拒绝躺赢：用大牛思路做新方向',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.5) return { text: "你把大牛的方法论用在交叉学科，搞出原创性突破！评审说“站在巨人肩膀上还能跳起来”，导师逢人就夸你“青出于蓝而胜于蓝”。", stats: { research: +30, sanity: +25, affinity: +15 } };
+          return { text: "大牛的记忆太强势，你写论文时不自觉模仿他的文风，连公式排版都和1998年一样。审稿人说“过时了”，拒稿理由让你怀疑人生。", stats: { sanity: -55, research: +20, health: -25 } };
+        }
+      },
+      {
+        text: '公开现象：申请“神经科学+科研”双课题',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.4) return { text: "你成了神经科学顶刊案例，同时拿到国家自然科学基金，一边研究记忆同步，一边用大牛思路做课题，双线开花。", stats: { research: +20, affinity: +30, sanity: +10 } };
+          return { text: "学界觉得你“为了经费编故事”，医院把你归为“精神异常”，导师让你先休病假调整，科研项目直接暂停。", stats: { health: -15, sanity: -45, research: -30 } };
+        }
+      }
+    ]
+  },
+
   // --- HIGH RISK ---
   {
     id: 'server_crash',
     risk: 'HIGH',
-    title: '服务器大爆炸',
-    description: '跑到一半的深度学习模型突然报错，机房传来焦糊味，显卡似乎冒烟了。',
+    title: '服务器爆炸：三天三夜的模型白跑了',
+    description: '你跑了72小时的深度学习模型刚收敛到最优解，机房突然传来“砰”的一声——显卡冒烟了，屏幕弹出“GPU已飞升，数据未保存”的报错。更要命的是，这组数据是导师申报杰青的核心依据。',
     gambleOption: {
-       text: '用灭火器物理降温 (赌一把)',
+       text: '灭火器物理降温：赌显卡还能救',
        resolve: () => {
           const r = Math.random();
-          if (r > 0.8) return { text: "神迹！你在火灾边缘拯救了显卡，不仅修好了，还超频了！", stats: { research: +20, affinity: +20, sanity: +10 } };
-          return { text: "你喷坏了整个机柜的服务器，赔偿金让你破产...", stats: { affinity: -50, sanity: -30, research: -10 } };
+          if (r > 0.8) return { text: "神迹！显卡降温后居然活了，不仅数据没丢，还因“极限超频”算力暴涨10%。导师说你“会过日子”，还给你报了显卡维修费。", stats: { research: +25, affinity: +25, sanity: +15 } };
+          return { text: "你喷错了灭火器（用了泡沫的），不仅显卡彻底报废，还弄坏了旁边师兄的服务器。赔偿金让你接下来半年只能吃泡面，导师的杰青申请直接黄了。", stats: { affinity: -60, sanity: -35, research: -15 } };
        }
     },
     choices: [
       {
-        text: '自己动手修',
+        text: '自己动手修：凭B站教程硬刚',
         hasRandom: true,
         resolve: () => {
           const r = Math.random();
-          if (r > 0.6) return { text: "你居然修好了！顺便优化了环境配置，全组都视你为神。", stats: { affinity: +15, research: +5, sanity: +10 } };
-          return { text: "你越修越坏，最后整个实验室的数据都丢了... 导师暴怒。", stats: { affinity: -30, research: -10, sanity: -20 } };
+          if (r > 0.6) return { text: "你跟着“电脑维修厮”的视频操作，居然给修好了！还顺便优化了服务器散热，全组都叫你“实验室华佗”，以后修设备都找你。", stats: { affinity: +20, research: +8, sanity: +12 } };
+          return { text: "你越修越乱，把主板插反了，导致整个实验室服务器集群宕机。师兄的顶会论文数据、师姐的毕业实验记录全没了，你成了实验室公敌。", stats: { affinity: -35, research: -12, sanity: -25 } };
         }
       },
       {
-        text: '立刻报告管理员',
+        text: '立刻报管理员：甩锅专业户',
         resolve: () => {
-          return { text: "管理员修了一个月才修好，这月你只能被迫摸鱼，进度停滞。", stats: { research: -5, sanity: +10, health: +5 } };
+          return { text: "管理员说“这是硬件老化，得等厂家寄配件”，一等就是一个月。你这月被迫摸鱼，导师问进度时只能说“服务器在渡劫”，毕业时间又推迟了。", stats: { research: -8, sanity: +12, health: +8 } };
         }
       },
       {
-        text: '假装没看见，悄悄溜走',
+        text: '假装没看见：溜之大吉',
         hasRandom: true,
         resolve: () => {
           const r = Math.random();
-          if (r > 0.4) return { text: "第二天别人修好了，没人发现是你弄坏的。", stats: { sanity: +15, health: +10 } };
-          return { text: "监控拍到你是最后一个离开机房的人... 全院通报批评。", stats: { affinity: -40, sanity: -20 }, chain: 'disciplinary_action' };
+          if (r > 0.4) return { text: "第二天管理员抢修好了，没人发现是你最后用的服务器。你假装不知情，还跟着大家吐槽“这破服务器真不靠谱”。", stats: { sanity: +18, health: +12 } };
+          return { text: "机房监控拍到你慌慌张张跑路的背影，学院通报批评：“科研态度不端正，导致公共财产损失”。导师让你在组会上做深刻检讨，还扣了你的劳务费。", stats: { affinity: -45, sanity: -25 }, chain: 'disciplinary_action' };
         }
       }
     ]
@@ -168,80 +247,254 @@ const EVENTS_POOL = [
     id: 'disciplinary_action',
     risk: 'HIGH', 
     isChain: true, 
-    title: '【连锁】行政处罚',
-    description: '因为之前的事故，学院下达了处分通知。你需要公开检讨，这是一段至暗时刻。',
+    title: '【连锁】社死检讨：全院都知道你搞炸服务器',
+    description: '学院把你的检讨稿抄送所有课题组，还要求你在全院科研例会上念。台下坐着你暗恋的师妹、刚回国的杰青大佬，还有脸黑到发紫的导师。',
     choices: [
       {
-        text: '诚恳检讨，痛哭流涕',
-        resolve: () => { return { text: "导师看你态度诚恳，帮你压下了一部分责任，但对你很失望。", stats: { sanity: -10, affinity: +5 } }; }
+        text: '诚恳检讨：哭着说“我对不起导师的基金”',
+        resolve: () => { return { text: "你声泪俱下，说自己“科研责任心不足”“以后一定爱护设备”，导师心软帮你压下了处分，就是私下里说“你这孩子太慌了，成不了大事”。", stats: { sanity: -15, affinity: +8 } }; }
       },
       {
-        text: '依然嘴硬，那是设备老化',
-        resolve: () => { return { text: "行政老师被激怒了，你的奖学金没了，导师也跟着丢脸。", stats: { sanity: -20, health: -5, affinity: -15 } }; }
+        text: '嘴硬甩锅：“服务器老化，我只是刚好赶上”',
+        resolve: () => { return { text: "行政老师当场怼你：“设备老化你不知道报修？” 奖学金直接取消，导师觉得你“没担当”，以后重要项目再也不交给你。", stats: { sanity: -25, health: -8, affinity: -20 } }; }
       },
       {
-        text: '请病假躲避风头',
-        resolve: () => { return { text: "虽然躲过了检讨会，但大家都在背后议论你，你在实验室被孤立了。", stats: { sanity: -5, affinity: -10 } }; }
+        text: '请病假躲避：装病逃过一劫',
+        resolve: () => { return { text: "你找校医院开了病假条，躲过了检讨会，但实验室流言四起：“他就是不敢承担责任”。现在没人愿意和你组队做实验，你成了孤家寡人。", stats: { sanity: -8, affinity: -15 } }; }
+      }
+    ]
+  },
+  {
+    id: 'data_fabrication',
+    risk: 'HIGH',
+    title: '数据造假诱惑：导师催毕业，实验不显著',
+    description: '你的实验结果p值永远在0.06徘徊，导师天天催“再做不出来就延毕”，同门悄悄塞给你个Excel：“我上次就是把0.06改成0.04，直接中了核心刊，没人查”。',
+    choices: [
+      {
+        text: '坚守底线：如实汇报“结果不显著”',
+        resolve: () => { return { text: "导师虽然失望，但夸你“学术诚信没问题”，同意换个研究方向。虽然之前的努力白费，但至少没留下污点，新方向反而更顺。", stats: { research: -15, affinity: +15, sanity: +8 } }; }
+      },
+      {
+        text: '铤而走险：改数据冲毕业',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.7) return { text: "论文顺利发表，你拿到毕业证入职大厂！但每晚都梦见审稿人说“数据异常”，看到“查重”“验证”这类词就浑身发抖。", stats: { research: +35, sanity: -30, affinity: +20 } };
+          return { text: "审稿人是领域大牛，一眼看穿“数据美化”，不仅拒稿还发邮件给学院。论文被撤稿，你被学校开除，学术生涯直接GG。", stats: { research: -60, affinity: -100, sanity: -45 } };
+        }
+      },
+      {
+        text: '伪造实验记录：掩盖不显著结果',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.5) return { text: "暂时蒙混过关，顺利毕业！但你患上“记录PTSD”，工作后写实验报告都反复检查，生怕露馅。", stats: { research: +15, sanity: -35, health: -15 } };
+          return { text: "师弟复刻你的实验，怎么都得不到相同结果，拿着你的记录问“师兄，你这孵育时间是不是写错了？” 谎言当场戳穿，你在课题组社死。", stats: { research: -45, affinity: -85, sanity: -40 } };
+        }
+      }
+    ]
+  },
+  {
+    id: 'lab_accident',
+    risk: 'HIGH',
+    title: '实验事故：腐蚀性试剂泼手上了',
+    description: '你做有机合成时走神（想顶会拒稿理由），手一抖把浓硝酸打翻在实验台，不仅手被灼伤，刚合成的中间体还全洒了——这可是你熬了三个通宵的成果。',
+    gambleOption: {
+      text: '紧急冲水后继续：轻伤不下火线',
+      resolve: () => {
+        const r = Math.random();
+        if (r > 0.7) return { text: "你忍着剧痛抢救出部分中间体，重新提纯后数据完美！导师说你“有科研精神”，还帮你申请了“科研创新奖”，奖金刚好够付医药费。", stats: { health: -25, research: +30, affinity: +25 } };
+        return { text: "伤口感染发炎，你被送进ICU，实验台被腐蚀得没法用，中间体全毁。等你出院，课题已经被同门接手，你只能从头再来。", stats: { health: -65, research: -20, sanity: -25 } };
+      }
+    },
+    choices: [
+      {
+        text: '立刻停手：去医院处理伤口',
+        resolve: () => { return { text: "伤口得到及时治疗，没留疤痕，但实验被迫中断。导师说“安全第一”，但眼神里全是“进度又要拖了”的无奈，你只能加班赶进度。", stats: { health: -12, research: -10, sanity: +8 } }; }
+      },
+      {
+        text: '隐瞒事故：自己用应急箱处理',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.4) return { text: "你用烧伤膏处理后居然愈合了，没人发现！就是留了个小疤痕，以后做实验都不敢走神了。", stats: { health: -18, sanity: -8 } };
+          return { text: "伤口化脓被导师看到，追问之下你只能坦白。导师又气又急：“违规操作还隐瞒！” 你被暂停实验资格，写了三千字检讨。", stats: { health: -35, research: -25, affinity: -35 } };
+        }
+      },
+      {
+        text: '让师弟收拾：我先去处理伤口',
+        resolve: () => { return { text: "师弟一边收拾一边吐槽“师兄怎么这么不小心”，还把这事传遍了实验室。现在大家都觉得你“不负责任”，组队做实验都不带你。", stats: { affinity: -30, sanity: -15, research: -8 } }; }
+      }
+    ]
+  },
+  {
+    id: 'thesis_plagiarism',
+    risk: 'HIGH',
+    title: '论文抄袭指控：查重率90%？',
+    description: '你的毕业论文查重报告出来了——总相似比90%，学院启动调查！其实是你引用文献时没改格式，直接复制粘贴了，结果被系统判定为“重度抄袭”，面临延毕风险。',
+    choices: [
+      {
+        text: '承认错误：申请重新排版引用',
+        resolve: () => { return { text: "学院核实后认定是“引用格式错误”，允许你修改后重新提交。但档案里留下了“学术不严谨”的记录，导师以后看你的论文都要逐句查引用。", stats: { research: -25, sanity: -25, affinity: -15 } }; }
+      },
+      {
+        text: '申诉维权：拿出引用证据',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.6) return { text: "你提交了所有引用文献的原文和标注记录，申诉成功！查重率降到10%，顺利通过审核。导师说“下次注意，学术规范不能马虎”。", stats: { research: +8, sanity: -8, affinity: -8 } };
+          return { text: "你提交的证据不完整，申诉被驳回。学院认定抄袭成立，你被勒令退学，之前的科研成果全被作废。", stats: { research: -100, affinity: -65, sanity: -55 } };
+        }
+      },
+      {
+        text: '找关系疏通：托导师打招呼',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.3) return { text: "导师帮你说了情，学院从轻处理，让你延期三个月重写。但你花光了所有积蓄请客送礼，还欠了导师一个大人情。", stats: { sanity: -20, affinity: +10, health: -15 } };
+          return { text: "疏通过程被举报，事情闹大，学院公开通报批评你“学术不端+试图舞弊”，你成了全校的反面教材，社死到毕业都不敢见人。", stats: { affinity: -75, sanity: -35, research: -45 } };
+        }
+      }
+    ]
+  },
+  {
+    id: 'mentor_conflict',
+    risk: 'HIGH',
+    title: '与导师决裂：研究方向互怼',
+    description: '你坚持做“小而美”的原创课题，导师却逼你转投“大热点”——他申请的重点项目需要热点数据。你说“热点太卷，原创才有出路”，导师说“不转方向就停你经费”，矛盾彻底爆发。',
+    choices: [
+      {
+        text: '硬刚到底：坚持自己的方向',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.5) return { text: "你的原创课题取得重大突破，发了顶会！导师被打脸后反而夸你“有主见”，还把你的成果加进了重点项目申报书。", stats: { research: +45, affinity: -15, sanity: +20 } };
+          return { text: "导师停了你的经费和设备使用权，你只能自己凑钱买试剂，实验进度龟速。最后被迫休学，课题半途而废，导师还在业内说你“不听话”。", stats: { research: -35, affinity: -55, sanity: -30 } };
+        }
+      },
+      {
+        text: '表面服从：私下偷偷做原方向',
+        resolve: () => { return { text: "你白天做热点课题应付导师，晚上熬夜做自己的方向，身心俱疲。两边进度都慢，热点课题数据不显著，原方向也没突破，每天都在崩溃边缘。", stats: { research: +8, health: -25, sanity: -35 } }; }
+      },
+      {
+        text: '申请换导师：此处不留爷自有留爷处',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.4) return { text: "新导师是领域大牛，欣赏你的原创思路，不仅给你经费，还帮你对接资源。你的课题很快出成果，之前的坚持没白费。", stats: { research: +20, affinity: +25, sanity: +15 } };
+          return { text: "其他导师都怕得罪你的原导师，没人愿意接收你。你成了“无导师学生”，只能挂靠在行政老师名下，毕业遥遥无期。", stats: { research: -20, affinity: -35, sanity: -25 } };
+        }
       }
     ]
   },
 
+  // --- MEDIUM RISK ---
   {
     id: 'paper_writing',
     risk: 'MEDIUM',
-    title: 'DDL惊魂夜',
-    description: '距离截稿日期还有3天，你的论文正文还是一片空白。',
+    title: 'DDL惊魂夜：顶会截稿还有72小时',
+    description: '顶会截稿日倒计时3天，你的LaTeX文档里只有\title、作者和摘要，正文是一片纯洁的空白，参考文献还没凑够10篇，甚至图注都没写。导师还在催“明天给我看初稿”。',
     choices: [
       {
-        text: '通宵肝爆 (3天不睡)',
+        text: '通宵肝爆：三天三夜不睡觉',
         hasRandom: true,
         resolve: () => {
           const r = Math.random();
-          if (r > 0.3) return { text: "奇迹发生了！你赶在最后一分钟提交了。", stats: { research: +20, health: -25, sanity: -15 } };
-          return { text: "你晕倒在了电脑前，被室友送进了校医院。", stats: { health: -50, research: +5, sanity: -10 } };
+          if (r > 0.3) return { text: "奇迹发生了！你靠着咖啡+红牛续命，赶在最后一分钟提交了论文。虽然格式有点乱，但至少没错过截稿日，现在看到电脑就想吐。", stats: { research: +25, health: -30, sanity: -20 } };
+          return { text: "你写到第二天凌晨直接晕倒在电脑前，被室友送进医院。论文只写了一半，只能放弃这次投稿，导师说“下次早点准备”，但眼神里全是失望。", stats: { health: -55, research: +8, sanity: -15 } };
         }
       },
       {
-        text: '申请延期/放弃这次',
+        text: '申请延期：或直接放弃',
         resolve: () => {
-           return { text: "你放弃了这次投稿，心情轻松了不少，但毕业又遥遥无期了。", stats: { sanity: +15, health: +5, research: -5 } };
+           return { text: "你给主编发邮件申请延期，被拒后直接放弃。心情瞬间轻松，但毕业又少了一个成果，同门都在晒接收通知，你只能默默羡慕。", stats: { sanity: +18, health: +10, research: -8 } };
         }
       },
       {
-        text: '找同门师兄帮忙',
+        text: '找师兄帮忙：抱大腿求带飞',
         hasRandom: true,
         resolve: () => {
           const r = Math.random();
-          if (r > 0.5) return { text: "师兄是大神，帮你改出了花，作为交换你要帮他带一周饭。", stats: { research: +15, sanity: +5, affinity: +5 } };
-          return { text: "师兄自己也忙得要死，不仅没帮你，还嘲笑了你的进度。", stats: { sanity: -15, affinity: -2 } };
+          if (r > 0.5) return { text: "师兄是顶会常客，帮你补全了实验分析和参考文献，还优化了格式。作为交换，你要帮他带一个月的饭，顺便给他跑实验样本。", stats: { research: +20, sanity: +8, affinity: +10 } };
+          return { text: "师兄自己也在赶另一个顶会的稿，不仅没帮你，还吐槽“你怎么现在才开始写”，让你更焦虑了，最后论文写得一塌糊涂。", stats: { sanity: -20, affinity: -5 } };
         }
       }
     ]
   },
-  
+  {
+    id: 'conference_presentation',
+    risk: 'MEDIUM',
+    title: '学术会议报告：台下全是大牛',
+    description: '你被选中在CCF A类会议做口头报告，台下坐着领域内的顶流大牛——包括你论文的审稿人！你准备的PPT还有三个Bug，演讲稿只背了一半，现在腿都在发抖。',
+    choices: [
+      {
+        text: '通宵排练：逐字逐句背下来',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.4) return { text: "报告完美落地！你流畅回答了所有提问，大牛对你的工作赞不绝口，还主动加了你的微信，说“以后多交流”。导师在台下笑得合不拢嘴。", stats: { research: +30, affinity: +35, sanity: +8 } };
+          return { text: "你太紧张导致大脑空白，讲到一半忘词了，只能对着PPT念。提问环节被大牛问得哑口无言，场面尴尬到脚趾抠出三室一厅。", stats: { sanity: -25, affinity: -15, research: -8 } };
+        }
+      },
+      {
+        text: 'PPT炫技：用动画掩盖紧张',
+        resolve: () => { return { text: "你的PPT做得堪比科幻大片，动画流畅到让人眼花缭乱，全场都在夸“PPT做得好”。但提问环节露馅了，你对实验细节答不上来，大家觉得你“只会做表面功夫”。", stats: { research: +8, affinity: -8, sanity: +12 } }; }
+      },
+      {
+        text: '找借口取消：说身体不舒服',
+        resolve: () => { return { text: "你错失了展示自己的机会，导师说“这么好的平台浪费了”，同门都在背后说你“没出息”。以后有学术会议，导师再也不推荐你了。", stats: { affinity: -20, sanity: +10, research: -12 } }; }
+      }
+    ]
+  },
+  {
+    id: 'review_rejection',
+    risk: 'MEDIUM',
+    title: '审稿意见暴击：被骂得怀疑人生',
+    description: '你的论文被顶会拒稿，审稿人留了三页红色批注，从“实验设计逻辑混乱”diss到“参考文献格式不规范”，最后一句“建议作者先学习一下科研入门知识”直接给你CPU干烧了。',
+    choices: [
+      {
+        text: '怒怼+修改：有理有据反驳',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.5) return { text: "你逐条反驳审稿人的不合理意见，补充了实验数据，修改后的论文被另一顶会接收！审稿人还私下给你发邮件：“反驳得有道理，继续加油”。", stats: { research: +25, sanity: +8, knowledge: +15 } };
+          return { text: "你的回应语气太冲，说审稿人“不懂我的研究”，被主编列入黑名单。该领域的所有顶会都拒收你的论文，导师说你“太年轻，不懂学术圈规则”。", stats: { research: -20, sanity: -25, affinity: -10 } };
+        }
+      },
+      {
+        text: '接受现实：转投低级别期刊',
+        resolve: () => { return { text: "论文顺利发表，但影响因子只有1.0，对毕业帮助不大。导师说“先有成果再说”，但你看着同门的顶会论文，心里不是滋味。", stats: { research: +12, sanity: +12, affinity: -5 } }; }
+      },
+      {
+        text: '崩溃大哭：放弃该方向',
+        resolve: () => { return { text: "你把论文文档扔进回收站，换了个新方向。虽然摆脱了审稿人的阴影，但之前半年的努力全白费，毕业时间又推迟了。", stats: { research: -30, sanity: +8, health: -8 } }; }
+      }
+    ]
+  },
+
   // --- LOW RISK ---
   {
     id: 'crush',
     risk: 'LOW',
-    title: '实验室恋情',
-    description: '新来的师妹/师弟似乎对你有意思，经常找你问问题。',
+    title: '实验室恋情：师妹总找我问问题',
+    description: '新来的师妹每次都找你问问题——其实GitHub上有详细教程，甚至Stack Overflow都有现成答案，但她就爱找你“手把手教学”，还总给你带早餐，实验室师兄都在起哄“磕到了”。',
     choices: [
       {
-        text: '热情辅导，发展感情',
+        text: '热情辅导：顺便发展感情',
         hasRandom: true,
         resolve: () => { 
            const r = Math.random();
-           if(r > 0.5) return { text: "你们在一起了！实验室变成了充满粉色泡泡的乐园。", stats: { sanity: +20, research: -5 }, chain: 'break_up' }; // 连锁分手
-           return { text: "你想多了，人家只是想让你帮忙跑代码。", stats: { sanity: -15, knowledge: +2 } };
+           if(r > 0.5) return { text: "你们在一起了！一起肝论文、一起跑实验、一起吐槽审稿人，实验室变成了撒糖现场。就是约会地点永远在实验室，话题永远离不开调参。", stats: { sanity: +25, research: -8 }, chain: 'break_up' }; // 连锁分手
+           return { text: "你想多了！师妹只是觉得你“脾气好、懂的多”，后来她和隔壁实验室的师兄在一起了，还邀请你去吃喜糖，尴尬到抠脚。", stats: { sanity: -18, knowledge: +5 } };
         }
       },
       {
-        text: '心中无女人，拔刀自然神',
-        resolve: () => { return { text: "你冷酷地拒绝了所有暗示，科研进度提升了！", stats: { research: +10, affinity: +2 } }; }
+        text: '一心搞科研：拒绝所有暗示',
+        resolve: () => { return { text: "你冷酷地说“有问题先查文献”，师妹再也没找过你。科研进度突飞猛进，但看着别人成双成对，你偶尔会觉得“科研虽香，有点孤单”。", stats: { research: +15, affinity: +5 } }; }
       },
       {
-        text: '介绍给同门师兄',
-        resolve: () => { return { text: "你成了月老，同门对你感激涕零。", stats: { sanity: +10, affinity: +5 } }; }
+        text: '介绍给师兄：成人之美',
+        resolve: () => { return { text: "你把师妹介绍给了单身的大师兄，两人一拍即合。师兄对你感激涕零，以后跑实验、写论文都带着你，还帮你抢GPU算力。", stats: { sanity: +15, affinity: +10 } }; }
       }
     ]
   },
@@ -250,67 +503,35 @@ const EVENTS_POOL = [
     id: 'break_up',
     isChain: true,
     risk: 'HIGH',
-    title: '【连锁】感情危机',
-    description: '之前建立的恋爱关系，因为你太忙于科研，忽略了另一半，对方提出了分手。',
+    title: '【连锁】感情危机：科研太忙被分手',
+    description: '你因为赶顶会截稿日，连续一周泡在实验室，忘了和师妹的纪念日，甚至她生病你都没陪她去医院。她哭着说“你爱的是论文，不是我”，提出了分手。',
     choices: [
       {
-        text: '苦苦挽留',
-        resolve: () => { return { text: "这月都在吵架，什么也没干，最后还是分了。", stats: { research: -10, sanity: -20 } }; }
+        text: '苦苦挽留：承诺以后平衡时间',
+        resolve: () => { return { text: "这月你一边哄师妹一边赶论文，两边都没顾好。论文数据出错，师妹也没回心转意，最后还是分了，你成了“失恋+科研失利”双输选手。", stats: { research: -15, sanity: -25 } }; }
       },
       {
-        text: '同意分手，专注科研',
-        resolve: () => { return { text: "化悲愤为力量！你在实验室住了一个月，产出惊人。", stats: { research: +20, sanity: -10, health: -10 } }; }
+        text: '同意分手：化悲愤为力量',
+        resolve: () => { return { text: "你把所有精力投入科研，在实验室住了一个月，论文直接中了顶会！但看到别人秀恩爱时，还是会想起她，偶尔会觉得遗憾。", stats: { research: +25, sanity: -15, health: -15 } }; }
       },
       {
-        text: '拉黑删除',
-        resolve: () => { return { text: "长痛不如短痛。你迅速调整了状态。", stats: { sanity: +5 } }; }
-      }
-    ]
-  },
-  
-  // 更多常规事件...
-  {
-    id: 'paper_reading',
-    risk: 'LOW',
-    title: '文献阅读月',
-    description: '导师发来了一个文件夹，里面有20篇"必读"的最新顶会论文。',
-    choices: [
-      {
-        text: '通宵精读每一篇',
-        hasRandom: true,
-        resolve: () => {
-          const r = Math.random();
-          if (r > 0.3) return { text: "虽然头发掉了一把，但你感觉打通了任督二脉！", stats: { sanity: -15, health: -10, knowledge: +15, affinity: +5 } };
-          return { text: "你读得太累睡着了，口水流在了键盘上，什么都没记住。", stats: { sanity: -10, health: -5, knowledge: +2 } };
-        }
-      },
-      {
-        text: '只读摘要和图表',
-        resolve: () => { return { text: "效率很高！你掌握了核心思想，还有时间打游戏。", stats: { sanity: +5, knowledge: +8, research: +2 } }; }
-      },
-      {
-        text: '扔给AI总结',
-        hasRandom: true,
-        resolve: () => {
-          const r = Math.random();
-          if (r > 0.5) return { text: "AI总结得头头是道，你在组会上侃侃而谈。", stats: { affinity: +10, knowledge: +5, sanity: +5 } };
-          return { text: "AI一本正经地胡说八道，你信了，结果被导师当场揭穿。", stats: { affinity: -20, research: -2 } };
-        }
+        text: '拉黑删除：长痛不如短痛',
+        resolve: () => { return { text: "你删掉了所有联系方式，强迫自己专注科研。虽然过程很痛苦，但一个月后你调整好了状态，实验进度稳步推进，只是再也不敢轻易谈恋爱了。", stats: { sanity: +8, health: +5 } }; }
       }
     ]
   },
   {
     id: 'funding_cut',
     risk: 'HIGH',
-    title: '经费断裂',
-    description: '导师脸色铁青地告诉你，组里的国家自然科学基金申请挂了，下个月开始可能发不出劳务费了。',
+    title: '经费断裂：导师画饼，我吃泡面',
+    description: '导师脸色铁青地告诉你，国家自然科学基金申请挂了，下个月开始发不出劳务费，甚至实验室的试剂都要“省着用”。你看着食堂的泡面，已经从红烧牛肉吃到老坛酸菜，再省就要啃馒头就咸菜了。',
     choices: [
-      { text: '与实验室共存亡', resolve: () => { return { text: "导师感动得热泪盈眶，承诺以后有钱了双倍补给你（画饼）。", stats: { affinity: +30, health: -10 } }; } },
-      { text: '找兼职补贴家用', resolve: () => { return { text: "虽然缓解了经济压力，但科研时间大幅减少，导师不太高兴。", stats: { research: -10, health: -5, sanity: +10, affinity: -10 } }; } },
-      { text: '帮导师写新本子', hasRandom: true, resolve: () => { 
+      { text: '与实验室共存亡：相信导师画的饼', resolve: () => { return { text: "导师感动地拍了拍你的肩膀：“等我申请到横向课题，双倍补给你”。你信了，继续吃泡面搞科研，只是不知道这饼什么时候能兑现。", stats: { affinity: +35, health: -15 } }; } },
+      { text: '找兼职补贴：一边搬砖一边科研', resolve: () => { return { text: "你找了个数据分析兼职，虽然缓解了经济压力，但每天下班还要去实验室，精力透支。导师看到你总迟到，不太高兴，说“科研要专心”。", stats: { research: -15, health: -10, sanity: +12, affinity: -15 } }; } },
+      { text: '帮导师写新本子：赌一把', hasRandom: true, resolve: () => { 
            const r = Math.random();
-           if(r > 0.4) return { text: "你写的本子居然中了！你是实验室的救世主！", stats: { affinity: +40, research: +10, knowledge: +10 } };
-           return { text: "写废了，浪费了时间，还被嫌弃文笔差。", stats: { sanity: -10, research: -5 } };
+           if(r > 0.4) return { text: "你熬夜写的基金本子居然中了！导师说你“救星”，不仅给你发了补发劳务费，还把你列为核心成员，以后有成果都带你署名。", stats: { affinity: +45, research: +15, knowledge: +15 } };
+           return { text: "你写的本子被评审说“创新性不足”，直接拒了。导师嫌弃你“文笔差”，你白忙活一场，还耽误了自己的实验进度。", stats: { sanity: -15, research: -8 } };
         } 
       }
     ]
@@ -318,12 +539,72 @@ const EVENTS_POOL = [
   {
     id: 'cat_in_lab',
     risk: 'LOW',
-    title: '实验室进猫了',
-    description: '一只流浪猫溜进了实验室，趴在你的服务器上取暖。',
+    title: '实验室神兽：猫主子溜进来了',
+    description: '一只流浪猫不知怎么溜进了实验室，精准跳上你的服务器取暖，还把你的实验记录本扒到了地上。师兄说“这是科研猫，能带来好运”，师姐已经开始给它起名字叫“顶会”。',
     choices: [
-      { text: '撸猫', resolve: () => { return { text: "治愈了！所有的烦恼都消失了。", stats: { sanity: +20, research: -2 } }; } },
-      { text: '赶走它，怕弄坏设备', resolve: () => { return { text: "猫猫委屈地走了，你有点不忍心。", stats: { sanity: -2 } }; } },
-      { text: '收养它作为实验室神兽', resolve: () => { return { text: "全实验室一起养猫，氛围变得异常和谐。", stats: { affinity: +5, sanity: +10 } }; } }
+      { text: '撸猫解压：科研再苦，撸猫治愈', resolve: () => { return { text: "你撸了半小时猫，所有的拒稿烦恼、调参焦虑都消失了！虽然实验记录本脏了，但下午跑模型居然一次收敛，果然是神兽显灵。", stats: { sanity: +25, research: -3 } }; } },
+      { text: '赶走它：怕弄坏精密设备', resolve: () => { return { text: "猫猫委屈地叫着跑了，你把实验记录本擦干净，但总觉得心里空落落的。下午跑模型连续报错三次，师兄说“你得罪了神兽”。", stats: { sanity: -5, research: -2 } }; } },
+      { text: '收养它：实验室吉祥物', resolve: () => { return { text: "全实验室凑钱买猫粮、猫砂，“顶会”成了实验室团宠。大家做完实验就撸猫，氛围和谐到不行，连导师都偶尔来喂它，说“这猫能镇住浮躁的科研心”。", stats: { affinity: +10, sanity: +15 } }; } }
+    ]
+  },
+  {
+    id: 'coffee_crisis',
+    risk: 'LOW',
+    title: '咖啡断供：科研人的末日',
+    description: '实验室的咖啡机坏了，而你已经连续一周靠咖啡续命——没有咖啡，你连LaTeX的公式都敲不利索，调参时眼睛都睁不开。师兄说“咖啡是科研人的命，没咖啡等于没灵魂”。',
+    choices: [
+      {
+        text: '跑遍学校买咖啡：为了科研冲',
+        resolve: () => { return { text: "你跑了三个食堂才买到咖啡，顺利完成了当天的实验。只是来回奔波浪费了两小时，原本能写完的论文摘要只能拖到明天。", stats: { research: +5, health: -5, sanity: +12 } }; }
+      },
+      {
+        text: '强忍困意：硬撑一天',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.5) return { text: "你慢慢适应了无咖啡状态，虽然效率低，但完成了数据整理。晚上回家睡了个好觉，第二天发现不用咖啡也能专注科研了。", stats: { research: +3, sanity: -8, health: +8 } };
+          return { text: "你困得睁不开眼，调参时把学习率输错了一个数量级，模型训练了一下午全白费。还不小心碰倒了试剂瓶，虽然没造成事故，但被导师批评“不专心”。", stats: { research: -8, sanity: -12, affinity: -5 } };
+        }
+      },
+      {
+        text: '动手修理咖啡机：科研人无所不能',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.4) return { text: "你跟着YouTube教程修好了咖啡机！全实验室欢呼雀跃，师兄说“你拯救了大家的科研命”，以后咖啡都让你先喝，还主动帮你跑实验样本。", stats: { affinity: +15, sanity: +15, knowledge: +8 } };
+          return { text: "你越修越坏，咖啡机彻底报废，大家只能喝速溶咖啡。速溶咖啡味道太差，所有人都没精神，实验室的科研效率直线下降，你成了“咖啡罪人”。", stats: { affinity: -8, sanity: -8 } };
+        }
+      }
+    ]
+  },
+  {
+    id: 'lost_usb',
+    risk: 'LOW',
+    title: 'U盘丢失：我的实验数据啊',
+    description: '你装着未备份实验数据的U盘不见了！里面有你熬了半个月的实验记录、模型权重和论文草稿，可能掉在了实验室、食堂或路上。现在你慌得一批，连饭都吃不下。',
+    choices: [
+      {
+        text: '发动同门寻找：人多力量大',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.6) return { text: "师兄在实验室沙发缝里找到了U盘！数据完好无损，你激动得请大家喝奶茶。现在你养成了“U盘不离身”的习惯，还备份了三份数据。", stats: { affinity: +12, sanity: +15, research: 0 } };
+          return { text: "大家找了半天没找到，你只能接受数据丢失的事实。花了一周时间重复实验，虽然累，但这次数据比之前更准确，也算因祸得福。", stats: { research: -18, sanity: -25, affinity: +5 } };
+        }
+      },
+      {
+        text: '放弃寻找：重新做实验',
+        resolve: () => { return { text: "你咬咬牙重新开始，每天泡在实验室，终于赶在截止日期前完成了实验。只是这一周熬得头发都掉了不少，现在看到U盘就害怕。", stats: { research: +8, health: -15, sanity: -12 } }; }
+      },
+      {
+        text: '贴寻物启事：悬赏奶茶',
+        hasRandom: true,
+        resolve: () => {
+          const r = Math.random();
+          if (r > 0.3) return { text: "有同学在食堂捡到了U盘，看到寻物启事后联系了你。你用一杯奶茶换回了数据，还认识了其他课题组的同学，以后合作更方便了。", stats: { sanity: +20, research: +5, health: -2 } };
+          return { text: "寻物启事石沉大海，悬赏的奶茶钱也白花了。你不仅丢了数据，还浪费了时间，只能重新做实验，心态崩到想退学。", stats: { research: -15, sanity: -20, health: -5 } };
+        }
+      }
     ]
   }
 ].filter(Boolean); // 过滤空值以防万一
@@ -339,7 +620,7 @@ const getRandomEvent = (currentTurn, recentEvents, pendingChainEvents) => {
 
   // 2. 增加极小概率触发异象事件 (Anomaly) - 仅在非连锁时触发
   const anomalyChance = Math.random();
-  if (anomalyChance < 0.05) { 
+  if (anomalyChance < 0.03) { 
       const anomalyEvents = EVENTS_POOL.filter(e => e.risk === 'ANOMALY');
       if (anomalyEvents.length > 0) {
           const anomaly = anomalyEvents[Math.floor(Math.random() * anomalyEvents.length)];
@@ -494,8 +775,8 @@ const GradStudentSimulator = () => {
     newSeenOutcomes[outcomeKey].add(result.text);
     setSeenOutcomes(newSeenOutcomes);
 
-    // 连锁事件 - 80% 概率触发，不是100%
-    if (result.chain && Math.random() < 0.8) {
+    // 连锁事件 - 60% 概率触发，不是100%
+    if (result.chain && Math.random() < 0.6) {
         setPendingChainEvents(prev => [...prev, { id: result.chain }]);
     }
     
