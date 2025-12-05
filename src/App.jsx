@@ -911,8 +911,8 @@ const GradStudentSimulator = () => {
           <div className="flex flex-col min-w-0">
              <div className="flex items-center gap-2">
                 <h1 className={`font-extrabold text-sm md:text-lg leading-tight truncate ${isAnomaly ? 'text-purple-200' : 'text-slate-800'}`}>研究生模拟器</h1>
-                <a href="https://github.com/Kiritorz/grad-student-simulator" target="_blank" rel="noopener noreferrer" className={`opacity-80 md:hover:opacity-100 transition-opacity ${isAnomaly ? 'text-purple-300' : 'text-slate-400 hover:text-slate-700'}`}>
-                  <Github size={14} />
+                <a href="https://github.com/Kiritorz" target="_blank" rel="noopener noreferrer" className={`opacity-50 hover:opacity-100 transition-opacity ${isAnomaly ? 'text-purple-300' : 'text-slate-400 hover:text-slate-700'}`}>
+                  <Github size={16} />
                 </a>
              </div>
              <div className="flex flex-wrap items-center gap-1.5 text-[10px] sm:text-xs font-medium mt-0.5">
@@ -1119,96 +1119,108 @@ const GradStudentSimulator = () => {
             </div>
           )}
 
-          {/* 阶段：事件结果 */}
+          {/* 阶段：事件结果 (重构后：分离滚动区与固定区) */}
           {phase === 'EVENT_RESULT' && resultLog && (
             <div key={animKey} className="flex-1 flex flex-col animate-pop-in pb-4">
-              <div className={`p-6 md:p-8 rounded-[2rem] shadow-xl border flex-1 flex flex-col relative overflow-hidden ${isAnomaly ? 'bg-slate-800 border-purple-800' : 'bg-white border-slate-200'}`}>
+              
+              {/* 卡片容器：Flex Column, 隐藏溢出 */}
+              <div className={`mb-6 flex-1 flex flex-col rounded-2xl border relative ${isAnomaly ? 'bg-slate-900/50 border-purple-700' : 'bg-slate-50/80 border-slate-200'} overflow-hidden min-h-0`}>
+                
+                {/* 装饰条 (absolute) */}
+                <div className={`absolute -left-1 top-6 w-1 h-10 rounded-r-full ${isAnomaly ? 'bg-purple-500' : 'bg-indigo-500'} z-10`}></div>
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${isAnomaly ? 'bg-purple-900' : 'bg-slate-100'}`}>
                    <div className={`h-full w-full animate-[loading_2s_ease-in-out] ${isAnomaly ? 'bg-purple-500' : 'bg-indigo-600'}`}></div>
                 </div>
 
+                {/* 顶部操作栏 */}
                 <button 
                     onClick={() => setIsReviewingEvent(!isReviewingEvent)}
-                    className={`absolute top-6 right-6 p-2 rounded-full transition-colors z-20 ${isAnomaly ? 'text-purple-600 md:hover:bg-purple-900 md:hover:text-purple-300' : 'text-slate-400 md:hover:text-indigo-600 md:hover:bg-slate-50'}`}
+                    className={`absolute top-4 right-4 p-2 rounded-full transition-colors z-20 ${isAnomaly ? 'text-purple-600 md:hover:bg-purple-900 md:hover:text-purple-300' : 'text-slate-400 md:hover:text-indigo-600 md:hover:bg-slate-50'}`}
                     title="查看原事件"
                 >
                     <Eye size={20} />
                 </button>
 
                 {isReviewingEvent ? (
-                    <div className="flex-1 flex flex-col justify-center animate-pop-in">
+                    <div className="flex-1 flex flex-col justify-center p-6 animate-pop-in">
                         <h3 className="text-sm font-bold opacity-50 uppercase tracking-widest mb-2">Event Review</h3>
                         <h2 className={`text-xl font-black mb-3 ${isAnomaly ? 'text-white' : 'text-slate-800'}`}>{currentEvent.title}</h2>
                         <p className={`leading-relaxed ${isAnomaly ? 'text-purple-200' : 'text-slate-600'}`}>{currentEvent.description}</p>
                     </div>
                 ) : (
                     <>
-                        <div className="mb-6 mt-2">
-                        <h3 className={`text-xs font-bold uppercase tracking-widest mb-1.5 flex items-center gap-2 ${isAnomaly ? 'text-purple-400' : 'text-slate-400'}`}>
-                            <CheckCircle2 size={14}/> 你的决定
-                        </h3>
-                        <p className={`font-bold text-xl ${isAnomaly ? 'text-white' : 'text-slate-800'}`}>{resultLog.choiceText}</p>
-                        </div>
-                        
-                        <div className={`mb-6 flex-1 p-5 rounded-2xl border relative ${isAnomaly ? 'bg-slate-900/50 border-purple-700' : 'bg-slate-50/80 border-slate-200'} overflow-y-auto custom-scrollbar max-h-[40vh]`}>
-                        <div className={`absolute -left-1 top-6 w-1 h-10 rounded-r-full ${isAnomaly ? 'bg-purple-500' : 'bg-indigo-500'}`}></div>
-                        
-                        <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isAnomaly ? 'text-purple-400' : 'text-slate-400'}`}>当前结果</h3>
-                        <p className={`text-lg leading-relaxed font-medium mb-4 ${isAnomaly ? 'text-purple-100' : 'text-slate-800'}`}>
-                            {resultLog.outcomeText}
-                        </p>
-
-                        {seenOutcomes[resultLog.outcomeKey] && seenOutcomes[resultLog.outcomeKey].size > 1 && (
-                            <div className={`mt-4 pt-4 border-t ${isAnomaly ? 'border-purple-800' : 'border-slate-200/50'}`}>
-                                <h4 className={`text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1 ${isAnomaly ? 'text-purple-400' : 'text-indigo-400'}`}>
-                                    <Sparkles size={10}/> 已探索的其他分支
-                                </h4>
-                                <ul className="space-y-1.5 max-h-32 overflow-y-auto custom-scrollbar">
-                                    {Array.from(seenOutcomes[resultLog.outcomeKey])
-                                        .filter(text => text !== resultLog.outcomeText)
-                                        .map((text, i) => (
-                                        <li key={i} className={`text-xs flex items-start gap-2 p-1.5 rounded border ${isAnomaly ? 'bg-slate-800 border-purple-800 text-purple-300' : 'bg-white/60 border-slate-100 text-slate-500'}`}>
-                                            <span className="mt-1 w-1 h-1 rounded-full bg-slate-300 shrink-0"></span>
-                                            <span>{text}</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                        {/* 上部滚动区域：包含结果文本 + 历史分支 */}
+                        <div className="flex-1 p-5 overflow-y-auto custom-scrollbar">
+                            {/* 你的决定 */}
+                            <div className="mb-6 mt-2">
+                                <h3 className={`text-xs font-bold uppercase tracking-widest mb-1.5 flex items-center gap-2 ${isAnomaly ? 'text-purple-400' : 'text-slate-400'}`}>
+                                    <CheckCircle2 size={14}/> 你的决定
+                                </h3>
+                                <p className={`font-bold text-xl ${isAnomaly ? 'text-white' : 'text-slate-800'}`}>{resultLog.choiceText}</p>
                             </div>
-                        )}
-                        
-                        <div className="mt-6 flex flex-wrap gap-2">
-                            {Object.entries(resultLog.statsChange)
-                            .filter(([_, val]) => val !== 0)
-                            .map(([key, val]) => (
-                            <span key={key} className={`text-xs font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 cursor-default ${
-                                val > 0 
-                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
-                                : 'bg-rose-50 border-rose-200 text-rose-700'
-                            }`}>
-                                {key === 'sanity' && 'SAN值'}
-                                {key === 'health' && '发量'}
-                                {key === 'research' && '科研'}
-                                {key === 'affinity' && '导师好感'}
-                                {key === 'knowledge' && '知识'}
-                                <span className="font-mono bg-white/60 px-1 rounded ml-0.5">{val > 0 ? `+${val}` : val}</span>
-                            </span>
-                            ))}
-                            {Object.values(resultLog.statsChange).every(v => v === 0) && (
-                                <span className={`text-xs font-medium italic ${isAnomaly ? 'text-purple-400' : 'text-slate-400'}`}>无属性变化</span>
+
+                            {/* 当前结果 */}
+                            <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isAnomaly ? 'text-purple-400' : 'text-slate-400'}`}>当前结果</h3>
+                            <p className={`text-lg leading-relaxed font-medium mb-4 ${isAnomaly ? 'text-purple-100' : 'text-slate-800'}`}>
+                                {resultLog.outcomeText}
+                            </p>
+
+                            {/* 历史分支 (直接渲染，不再嵌套滚动条) */}
+                            {seenOutcomes[resultLog.outcomeKey] && seenOutcomes[resultLog.outcomeKey].size > 1 && (
+                                <div className={`mt-4 pt-4 border-t ${isAnomaly ? 'border-purple-800' : 'border-slate-200/50'}`}>
+                                    <h4 className={`text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1 ${isAnomaly ? 'text-purple-400' : 'text-indigo-400'}`}>
+                                        <Sparkles size={10}/> 已探索的其他分支
+                                    </h4>
+                                    <ul className="space-y-1.5">
+                                        {Array.from(seenOutcomes[resultLog.outcomeKey])
+                                            .filter(text => text !== resultLog.outcomeText)
+                                            .map((text, i) => (
+                                            <li key={i} className={`text-xs flex items-start gap-2 p-1.5 rounded border ${isAnomaly ? 'bg-slate-800 border-purple-800 text-purple-300' : 'bg-white/60 border-slate-100 text-slate-500'}`}>
+                                                <span className="mt-1 w-1 h-1 rounded-full bg-slate-300 shrink-0"></span>
+                                                <span>{text}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             )}
                         </div>
+
+                        {/* 底部固定区域：属性变化 */}
+                        <div className={`p-3 md:p-4 border-t ${isAnomaly ? 'border-purple-800 bg-slate-900/30' : 'border-slate-200/50 bg-white/40'} shrink-0`}>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(resultLog.statsChange)
+                                .filter(([_, val]) => val !== 0)
+                                .map(([key, val]) => (
+                                <span key={key} className={`text-xs font-bold px-2.5 py-1 rounded-lg border flex items-center gap-1.5 cursor-default ${
+                                    val > 0 
+                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                                    : 'bg-rose-50 border-rose-200 text-rose-700'
+                                }`}>
+                                    {key === 'sanity' && 'SAN值'}
+                                    {key === 'health' && '发量'}
+                                    {key === 'research' && '科研'}
+                                    {key === 'affinity' && '导师好感'}
+                                    {key === 'knowledge' && '知识'}
+                                    <span className="font-mono bg-white/60 px-1 rounded ml-0.5">{val > 0 ? `+${val}` : val}</span>
+                                </span>
+                                ))}
+                                {Object.values(resultLog.statsChange).every(v => v === 0) && (
+                                    <span className={`text-xs font-medium italic ${isAnomaly ? 'text-purple-400' : 'text-slate-400'}`}>无属性变化</span>
+                                )}
+                            </div>
                         </div>
                     </>
                 )}
+              </div>
 
-                <button 
+              {/* 下一步按钮 */}
+              <button 
                   onClick={nextTurn}
                   className={`w-full text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98] text-base ${isAnomaly ? 'bg-purple-600 md:hover:bg-purple-500 shadow-purple-900' : 'bg-indigo-600 md:hover:bg-indigo-700 shadow-indigo-200'}`}
                 >
                   <span>{isReviewingEvent ? '返回结果' : '进入下一月'}</span>
                   {!isReviewingEvent && <ArrowRight size={18} />}
-                </button>
-              </div>
+              </button>
             </div>
           )}
 
