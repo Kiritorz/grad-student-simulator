@@ -1,18 +1,99 @@
-# React + Vite
+# 🎓 科研求生记：研究生模拟器
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**一款基于事件驱动的研究生生涯模拟系统，通过动态决策模型还原科研道路的复杂性与随机性**
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🔍 项目概述
 
-## React Compiler
+本项目是一款以研究生三年培养周期为核心的文字冒险模拟系统，通过构建多维度属性模型与概率化事件池，复现科研过程中的关键决策场景。系统采用状态机管理机制，实时响应玩家选择并动态调整角色属性，最终根据36个月（3年制）的累计状态判定毕业结果。
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+区别于传统模拟游戏，本系统引入**因果链事件引擎**与**风险权重算法**，使事件触发概率与角色当前状态强关联，形成高度拟真的科研生存体验。
 
-Note: This will impact Vite dev & build performances.
 
-## Expanding the ESLint configuration
+## 🎯 核心机制
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 1. 初始特质矩阵
+提供四种差异化初始设定，构建角色基础属性基线：
+
+| 特质ID | 名称 | 核心属性调节 | 适用策略 |
+|--------|------|--------------|----------|
+| `roll_king` | 学术卷王 | 科研+15，健康-20 | 高强度成果导向 |
+| `social_star` | 社交达人 | 好感+20，理智+10，科研-10 | 资源整合优先 |
+| `rich_kid` | 带资进组 | 知识+10，健康+10，好感-10 | 技术深耕路线 |
+| `buddha` | 佛系青年 | 理智+30，科研-5，好感-15 | 风险规避策略 |
+
+*属性基准线：理智70，健康70，科研0，好感40，知识0*
+
+
+### 2. 动态属性调节系统
+五大核心属性构成生存维度，相互影响形成闭环：
+- **科研值（research）**：论文成果与实验进展量化指标（顶会接收+30，拒稿-20）
+- **健康值（health）**：生理状态监测，≤0触发休学机制
+- **理智值（sanity）**：精神韧性指标，对抗学术压力与突发危机
+- **好感度（affinity）**：学术人脉与导师关系量化，影响资源获取
+- **知识量（knowledge）**：技能储备度，提升高风险事件成功率
+
+
+### 3. 多维度事件引擎
+基于风险等级分类的事件池（30+事件），采用加权随机触发机制：
+
+| 风险等级 | 触发概率 | 典型场景 | 系统影响 |
+|----------|----------|----------|----------|
+| 日常琐事（LOW） | 40% | 咖啡断供、实验室猫入侵 | 轻微属性波动 |
+| 关键节点（MEDIUM） | 30% | 顶会截稿、学术报告 | 中等属性影响 |
+| 高危警报（HIGH） | 20% | 服务器崩溃、实验事故 | 显著属性震荡 |
+| 时空异象（ANOMALY） | 7% | 时间循环、AI觉醒 | 极端属性重构 |
+| 因果连锁（CHAIN） | 3% | 恋情破裂、处分后续 | 持续属性衰减 |
+
+*事件触发概率与当前属性状态动态关联，如低健康值提升事故类事件概率*
+
+
+## 📊 结局判定体系
+
+### 毕业条件
+- 36个月内科研值 ≥ 100
+- 导师好感度 ≥ 60
+- 未触发退学级极端事件（学术不端、重大事故等）
+
+### 失败场景
+- 健康值 ≤ 0 → 过劳休学结局
+- 理智值 ≤ 0 → 精神崩溃结局
+- 科研值持续低迷 → 延期毕业结局
+- 学术不端行为 → 开除学籍结局
+- 导师好感度 ≤ -30 → 课题组除名结局
+
+
+## 🔧 技术架构
+
+### 核心技术栈
+- 前端框架：React 18
+- 状态管理：React Hooks（useState + useReducer）
+- 图标系统：Lucide 矢量图标库
+- 样式解决方案：Tailwind CSS 动态样式
+
+### 系统设计亮点
+1. **事件驱动架构**：事件配置与逻辑分离，通过`EVENTS_POOL`数组实现可扩展事件管理
+2. **概率计算模块**：内置随机数生成器控制分支选择权重，支持风险-回报动态平衡
+3. **状态持久化**：通过属性快照机制记录关键决策节点，支持事件连锁反应
+4. **样式组件化**：基于风险等级的动态样式系统（`RISK_CONFIG`），实现视觉与风险强关联
+
+
+## 🚀 快速启动
+
+```bash
+# 克隆仓库
+git clone https://github.com/yourusername/graduate-simulator.git
+
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+
+# 构建生产版本
+npm run build
+```
+
+---
+
+© 2025 K1ssInn | Gemini
