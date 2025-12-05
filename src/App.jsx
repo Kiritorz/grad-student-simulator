@@ -33,7 +33,7 @@ const ACHIEVEMENTS_DATA = [
   { id: 'sanity_zero', title: '精神崩溃', desc: '你在这个周一的早晨选择了退学。也许卖炒粉才是你的归宿？', condition: 'SAN值归零', icon: Zap, color: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-300' },
   { id: 'health_zero', title: 'ICU 预定', desc: '救护车的声音响彻校园。长期熬夜让你倒在了实验室的地板上。', condition: '发量归零', icon: Skull, color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-300' },
   { id: 'affinity_zero', title: '逐出师门', desc: '导师把你叫到办公室，冷冷地通知你：“你另请高明吧”。', condition: '好感归零', icon: HeartCrack, color: 'text-pink-600', bg: 'bg-pink-100', border: 'border-pink-300' },
-  { id: 'fish_master', title: '摸鱼大师', desc: '虽然没毕业，但你身体倍儿棒，心态超好。导师拿你没办法，只能让你延毕。', condition: '延毕且健康/精神>80', icon: Coffee, color: 'text-emerald-500', bg: 'bg-emerald-100', border: 'border-emerald-300' },
+  { id: 'fish_master', title: '摸鱼大师', desc: '虽然没毕业，但你身体倍儿棒，心态超好。导师拿你没办法，只能让你延毕。', condition: '延毕且健康与SAN值均>80', icon: Coffee, color: 'text-emerald-500', bg: 'bg-emerald-100', border: 'border-emerald-300' },
   { id: 'deferred', title: '被迫延毕', desc: '时间到了。你的成果平平无奇，只能延期毕业，继续在这个炼狱里挣扎。', condition: '时间耗尽未毕业', icon: Clock, color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-300' },
 ];
 
@@ -1040,7 +1040,7 @@ const GradStudentSimulator = () => {
 
     // 3. 时间耗尽
     if (turn > MAX_TURNS) {
-      if (research > 80 && health > 80) ids.push('fish_master');
+      if (sanity > 80 && health > 80) ids.push('fish_master');
       else ids.push('deferred');
       return ids;
     }
