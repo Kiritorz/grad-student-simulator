@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Ghost, Link as LinkIcon, Target, Github, Trophy, Lock, Medal, ZapOff } from 'lucide-react';
+import { BookOpen, Coffee, Skull, Heart, Award, Briefcase, Zap, Clock, AlertTriangle, ArrowRight, GraduationCap, Sparkles, Frown, Smile, Flame, CheckCircle2, History, X, ChevronRight, Dices, Eye, Crown, Palette, Ghost, Link as LinkIcon, Target, Github, Trophy, Lock, Medal, ZapOff, HeartCrack } from 'lucide-react';
 
 // --- 游戏配置 ---
 const MAX_TURNS = 36; // 36个月 (3年制)
@@ -32,7 +32,7 @@ const ACHIEVEMENTS_DATA = [
   { id: 'almost_there', title: '倒在黎明前', desc: '明明只差一点点... 科研进度都95%了，心态却先崩了。', condition: '科研>=95时失败', icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-100', border: 'border-orange-300' },
   { id: 'sanity_zero', title: '精神崩溃', desc: '你在这个周一的早晨选择了退学。也许卖炒粉才是你的归宿？', condition: 'SAN值归零', icon: Zap, color: 'text-yellow-600', bg: 'bg-yellow-100', border: 'border-yellow-300' },
   { id: 'health_zero', title: 'ICU 预定', desc: '救护车的声音响彻校园。长期熬夜让你倒在了实验室的地板上。', condition: '发量归零', icon: Skull, color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-300' },
-  { id: 'affinity_zero', title: '逐出师门', desc: '导师把你叫到办公室，冷冷地通知你：“你另请高明吧”。', condition: '好感归零', icon: Heart, color: 'text-pink-600', bg: 'bg-pink-100', border: 'border-pink-300' },
+  { id: 'affinity_zero', title: '逐出师门', desc: '导师把你叫到办公室，冷冷地通知你：“你另请高明吧”。', condition: '好感归零', icon: HeartCrack, color: 'text-pink-600', bg: 'bg-pink-100', border: 'border-pink-300' },
   { id: 'fish_master', title: '摸鱼大师', desc: '虽然没毕业，但你身体倍儿棒，心态超好。导师拿你没办法，只能让你延毕。', condition: '延毕且健康/精神>80', icon: Coffee, color: 'text-emerald-500', bg: 'bg-emerald-100', border: 'border-emerald-300' },
   { id: 'deferred', title: '被迫延毕', desc: '时间到了。你的成果平平无奇，只能延期毕业，继续在这个炼狱里挣扎。', condition: '时间耗尽未毕业', icon: Clock, color: 'text-slate-500', bg: 'bg-slate-100', border: 'border-slate-300' },
 ];
@@ -42,34 +42,38 @@ const TRAITS = [
   { 
     id: 'roll_king', 
     name: '学术卷王', 
-    desc: '初始科研+15，但发量-20。', 
+    desc: '只要学不死，就往死里学。', 
     icon: Flame,
     color: 'from-orange-500 to-red-600',
-    stats: { research: 15, health: -20, sanity: 0, affinity: 5, knowledge: 5 }
+    stats: { research: 25, health: -20, sanity: 0, affinity: 15, knowledge: 20 },
+    statsDesc: '科研+25，发量-20，导师好感+15，知识+20'
   },
   { 
     id: 'social_star', 
     name: '社交达人', 
-    desc: '初始导师好感+20，SAN值+10，科研-10。', 
+    desc: '比起实验室，更常出现在联谊会。',
     icon: Smile,
     color: 'from-pink-500 to-rose-500',
-    stats: { research: -10, health: 0, sanity: 10, affinity: 20, knowledge: 0 }
+    stats: { research: 0, health: 0, sanity: 0, affinity: 35, knowledge: 5 },
+    statsDesc: '导师好感+35，知识+5'
   },
   { 
     id: 'rich_kid', 
     name: '带资进组', 
-    desc: '初始资源丰富（知识+10, 发量+10），好感-10。', 
+    desc: '经费？我自己带。', 
     icon: Crown,
     color: 'from-yellow-400 to-amber-600',
-    stats: { research: 0, health: 10, sanity: 10, affinity: -10, knowledge: 10 }
+    stats: { research: 0, health: 20, sanity: 10, affinity: 0, knowledge: 10 },
+    statsDesc: '发量+20，SAN值+10，知识+10'
   },
   { 
     id: 'buddha', 
     name: '佛系青年', 
-    desc: 'SAN值极高(+30)，但导师好感初始较低。', 
+    desc: '缘分到了，论文自然就有了。', 
     icon: Coffee,
     color: 'from-emerald-400 to-teal-600',
-    stats: { research: -5, health: 10, sanity: 30, affinity: -15, knowledge: 0 }
+    stats: { research: 0, health: 10, sanity: 30, affinity: -5, knowledge: 5 },
+    statsDesc: '发量+10，SAN值+30，导师好感-5，知识+5'
   }
 ];
 
@@ -841,78 +845,16 @@ const EVENTS_POOL = [
   }
 ].filter(Boolean); // 过滤空值以防万一
 
-// 如果列表为空（防止省略导致报错），补充一个基础事件
-if (EVENTS_POOL.length < 5) {
-    EVENTS_POOL.push({
-        id: 'fallback_reading',
-        risk: 'LOW',
-        title: '文献阅读',
-        description: '无事发生，读点文献吧。',
-        choices: [
-            { text: '认真读', resolve: () => ({ text: '收获颇丰', stats: { knowledge: +5, sanity: -2 } }) },
-            { text: '摸鱼', resolve: () => ({ text: '休息了一下', stats: { sanity: +5 } }) },
-            { text: '找导师', resolve: () => ({ text: '导师很忙', stats: { affinity: +2 } }) }
-        ]
-    });
-}
-
-// --- 结局判定函数 (返回所有达成的成就ID) ---
-const getUnlockedEndingIds = (turn, stats) => {
-  const { sanity, health, affinity, knowledge, research } = stats;
-  const ids = [];
-
-  // 1. 成功结局
-  if (research >= 100) {
-    if (turn <= 6) ids.push('speed_run_6');
-    if (sanity >= 100 && health >= 100 && affinity >= 100 && knowledge >= 100) ids.push('god_mode');
-    
-    if (turn <= 12) ids.push('speed_run_12');
-    if (sanity >= 80 && health >= 80 && affinity >= 80 && knowledge >= 80) ids.push('hexagon');
-
-    if (knowledge >= 90) ids.push('nobel_reserve');
-    if (affinity >= 90) ids.push('head_disciple');
-    if (health >= 90) ids.push('health_master');
-    if (sanity >= 90) ids.push('zen_master');
-
-    if (health <= 20) ids.push('battle_scarred');
-    if (sanity <= 20) ids.push('cthulhu');
-    if (affinity <= 20) ids.push('lone_wolf');
-    if (knowledge < 30) ids.push('lucky_dog');
-
-    // 如果没有任何特殊成就，保底一个普通毕业
-    if (ids.length === 0) ids.push('normal_grad');
-    return ids;
-  }
-
-  // 2. 失败结局 (属性归零)
-  if (sanity <= 0 || health <= 0 || affinity <= 0) {
-      if (turn <= 1) ids.push('instant_death');
-      if (research >= 95) ids.push('almost_there');
-      
-      if (sanity <= 0) ids.push('sanity_zero');
-      if (health <= 0) ids.push('health_zero');
-      if (affinity <= 0) ids.push('affinity_zero');
-      return ids;
-  }
-
-  // 3. 时间耗尽
-  if (turn > MAX_TURNS) {
-      if (research > 80 && health > 80) ids.push('fish_master');
-      else ids.push('deferred');
-      return ids;
-  }
-
-  return []; // 游戏未结束
-};
-
 // --- 辅助函数 ---
 const getRandomEvent = (currentTurn, recentEvents, pendingChainEvents) => {
+  // 1. 优先处理连锁事件 (优先级最高)
   if (pendingChainEvents.length > 0) {
      const nextChain = pendingChainEvents[0];
      const fullEvent = EVENTS_POOL.find(e => e.id === nextChain.id);
      if (fullEvent) return { event: fullEvent, isChain: true };
   }
 
+  // 2. 增加极小概率触发异象事件 (Anomaly) - 仅在非连锁时触发
   const anomalyChance = Math.random();
   if (anomalyChance < 0.05) { 
       const anomalyEvents = EVENTS_POOL.filter(e => e.risk === 'ANOMALY');
@@ -924,11 +866,20 @@ const getRandomEvent = (currentTurn, recentEvents, pendingChainEvents) => {
       }
   }
 
+  // 3. 随机池过滤 (必须排除 isChain: true 的事件)
   let pool = EVENTS_POOL.filter(e => !e.isChain && !recentEvents.includes(e.id) && e.risk !== 'ANOMALY');
+  
+  // 兜底
   if (pool.length === 0) pool = EVENTS_POOL.filter(e => !e.isChain && e.risk !== 'ANOMALY');
 
+  // 安全返回，防止undefined
   const selected = pool[Math.floor(Math.random() * pool.length)];
-  return { event: selected || EVENTS_POOL[0], isChain: false };
+  if (!selected) {
+      // 极端兜底，返回第一个非链式事件
+      return { event: EVENTS_POOL.find(e => !e.isChain) || EVENTS_POOL[0], isChain: false };
+  }
+
+  return { event: selected, isChain: false };
 };
 
 const GradStudentSimulator = () => {
@@ -939,12 +890,11 @@ const GradStudentSimulator = () => {
   const [selectedTrait, setSelectedTrait] = useState(null);
   
   const [currentEvent, setCurrentEvent] = useState(null);
+  // 追踪当前事件是否为连锁事件，用于UI渲染
   const [isCurrentEventChain, setIsCurrentEventChain] = useState(false);
 
   const [resultLog, setResultLog] = useState(null);
-  
-  // 结局状态：现在包含主结局和所有解锁的结局
-  const [endState, setEndState] = useState(null); 
+  const [endState, setEndState] = useState(null);
   const [animKey, setAnimKey] = useState(0);
 
   // 历史与逻辑控制
@@ -952,20 +902,28 @@ const GradStudentSimulator = () => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   
   // 存档数据：分支 + 成就
-  const [seenOutcomes, setSeenOutcomes] = useState({});
+  const [seenOutcomes, setSeenOutcomes] = useState(() => {
+      try {
+          const saved = localStorage.getItem('gradSim_seenOutcomes');
+          if (saved) {
+              const parsed = JSON.parse(saved);
+              const reconstructed = {};
+              Object.keys(parsed).forEach(key => {
+                  reconstructed[key] = new Set(parsed[key]);
+              });
+              return reconstructed;
+          }
+      } catch (e) {
+          console.error("Failed to load history", e);
+      }
+      return {};
+  });
+  
   const [unlockedAchievements, setUnlockedAchievements] = useState(new Set());
 
-  // 初始化加载
+  // 初始化加载成就
   useEffect(() => {
       try {
-          const savedOutcomes = localStorage.getItem('gradSim_seenOutcomes');
-          if (savedOutcomes) {
-              const parsed = JSON.parse(savedOutcomes);
-              const reconstructed = {};
-              Object.keys(parsed).forEach(key => reconstructed[key] = new Set(parsed[key]));
-              setSeenOutcomes(reconstructed);
-          }
-          
           const savedAch = localStorage.getItem('gradSim_achievements');
           if (savedAch) {
               setUnlockedAchievements(new Set(JSON.parse(savedAch)));
@@ -986,9 +944,11 @@ const GradStudentSimulator = () => {
   
   const [recentEvents, setRecentEvents] = useState([]); 
   const [pendingChainEvents, setPendingChainEvents] = useState([]);
+  
   const [isReviewingEvent, setIsReviewingEvent] = useState(false);
   const [showAchievementModal, setShowAchievementModal] = useState(false);
 
+  // 彻底重置游戏
   const resetGame = () => {
     setStats({ ...INITIAL_STATS_BASE });
     setTurn(1);
@@ -1002,25 +962,17 @@ const GradStudentSimulator = () => {
     setPhase('CHARACTER_CREATION');
   };
 
-  const unlockAchievements = (ids) => {
-      let newSet = new Set(unlockedAchievements);
-      let hasNew = false;
-      ids.forEach(id => {
-          if (!newSet.has(id)) {
-              newSet.add(id);
-              hasNew = true;
-          }
-      });
-      if (hasNew) setUnlockedAchievements(newSet);
-  };
-
+  // 检测游戏结束状态 (返回true表示游戏结束)
   const checkGameOver = () => {
     const endingIds = getUnlockedEndingIds(turn, stats);
     
     if (endingIds.length > 0) {
-        unlockAchievements(endingIds);
+        // 解锁新成就
+        let newSet = new Set(unlockedAchievements);
+        endingIds.forEach(id => newSet.add(id));
+        setUnlockedAchievements(newSet);
         
-        // 找到优先级最高的主结局 (在 ACHIEVEMENTS_DATA 中 index 越小优先级越高)
+        // 找到优先级最高的主结局
         let primaryEnding = null;
         for (const ach of ACHIEVEMENTS_DATA) {
             if (endingIds.includes(ach.id)) {
@@ -1046,11 +998,60 @@ const GradStudentSimulator = () => {
     return false;
   };
 
+  // 结局判定函数 (返回所有达成的成就ID)
+  const getUnlockedEndingIds = (turn, stats) => {
+    const { sanity, health, affinity, knowledge, research } = stats;
+    const ids = [];
+
+    // 1. 成功结局
+    if (research >= 100) {
+        if (turn <= 6) ids.push('speed_run_6');
+        if (sanity >= 100 && health >= 100 && affinity >= 100 && knowledge >= 100) ids.push('god_mode');
+        
+        if (turn <= 12) ids.push('speed_run_12');
+        if (sanity >= 80 && health >= 80 && affinity >= 80 && knowledge >= 80) ids.push('hexagon');
+
+        if (knowledge >= 90) ids.push('nobel_reserve');
+        if (affinity >= 90) ids.push('head_disciple');
+        if (health >= 90) ids.push('health_master');
+        if (sanity >= 90) ids.push('zen_master');
+
+        if (health <= 20) ids.push('battle_scarred');
+        if (sanity <= 20) ids.push('cthulhu');
+        if (affinity <= 20) ids.push('lone_wolf');
+        if (knowledge < 30) ids.push('lucky_dog');
+
+        // 保底
+        if (ids.length === 0) ids.push('normal_grad');
+        return ids;
+    }
+
+    // 2. 失败结局 (属性归零)
+    if (sanity <= 0 || health <= 0 || affinity <= 0) {
+        if (turn <= 1) ids.push('instant_death');
+        if (research >= 95) ids.push('almost_there');
+        
+        if (sanity <= 0) ids.push('sanity_zero');
+        if (health <= 0) ids.push('health_zero');
+        if (affinity <= 0) ids.push('affinity_zero');
+        return ids;
+    }
+
+    // 3. 时间耗尽
+    if (turn > MAX_TURNS) {
+        if (research > 80 && health > 80) ids.push('fish_master');
+        else ids.push('deferred');
+        return ids;
+    }
+
+    return []; 
+  };
+
   const applyTrait = (trait) => {
     setSelectedTrait(trait);
     const newStats = { ...INITIAL_STATS_BASE };
     Object.keys(trait.stats).forEach(key => {
-      newStats[key] += trait.stats[key];
+      newStats[key] = Math.max(0, newStats[key] + trait.stats[key]); // 确保初始不为负
     });
     setStats(newStats);
     setPhase('START');
@@ -1061,6 +1062,7 @@ const GradStudentSimulator = () => {
     setHistoryLog([]);
     setRecentEvents([]);
     setPendingChainEvents([]);
+    
     generateNextEvent(1, [], []);
     setPhase('EVENT_SELECTION');
     setAnimKey(prev => prev + 1);
@@ -1081,10 +1083,13 @@ const GradStudentSimulator = () => {
     const idxKey = isGamble ? 999 : choiceIndex;
     const outcomeKey = `${currentEvent.id}_${idxKey}`;
     const newSeenOutcomes = { ...seenOutcomes };
-    if (!newSeenOutcomes[outcomeKey]) newSeenOutcomes[outcomeKey] = new Set();
+    if (!newSeenOutcomes[outcomeKey]) {
+        newSeenOutcomes[outcomeKey] = new Set();
+    }
     newSeenOutcomes[outcomeKey].add(result.text);
     setSeenOutcomes(newSeenOutcomes);
 
+    // 连锁事件 - 80% 概率触发，不是100%
     if (result.chain && Math.random() < 0.8) {
         setPendingChainEvents(prev => [...prev, { id: result.chain }]);
     }
@@ -1122,7 +1127,9 @@ const GradStudentSimulator = () => {
   };
 
   const nextTurn = () => {
+    // 关键修复：点击下一月时才检查结局，确保用户能看到最后一次事件的结果
     if (checkGameOver()) return;
+
     const nextTurnNum = turn + 1;
     setTurn(nextTurnNum);
     generateNextEvent(nextTurnNum, recentEvents, pendingChainEvents);
@@ -1143,17 +1150,17 @@ const GradStudentSimulator = () => {
       0% { opacity: 0; transform: translateY(15px); }
       100% { opacity: 1; transform: translateY(0); }
     }
+    @keyframes anomalyPulse {
+      0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+      50% { background-position: 100% 50%; filter: hue-rotate(15deg); }
+      100% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+    }
     .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .anomaly-bg {
         background: linear-gradient(270deg, #1a1a2e, #16213e, #2d1b4e);
         background-size: 600% 600%;
         animation: anomalyPulse 8s ease infinite;
-    }
-    @keyframes anomalyPulse {
-      0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
-      50% { background-position: 100% 50%; filter: hue-rotate(15deg); }
-      100% { background-position: 0% 50%; filter: hue-rotate(0deg); }
     }
     .custom-scrollbar::-webkit-scrollbar { width: 4px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -1307,7 +1314,7 @@ const GradStudentSimulator = () => {
           </div>
         </header>
 
-        {/* 状态面板 (仅在非角色创建阶段显示) */}
+        {/* 状态面板 */}
         {phase !== 'CHARACTER_CREATION' && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <StatCard icon={Zap} label="SAN值" value={stats.sanity} isAnomaly={isAnomaly} color="text-yellow-600" barColor="bg-yellow-500" borderColor="border-yellow-200" shadow="shadow-yellow-100" />
@@ -1342,6 +1349,7 @@ const GradStudentSimulator = () => {
                             <trait.icon size={18} />
                          </div>
                          <h3 className="font-bold text-slate-800 text-base md:text-lg mb-1">{trait.name}</h3>
+                         <p className="text-slate-500 text-xs md:text-sm leading-relaxed">{trait.statsDesc}</p>
                          <p className="text-slate-500 text-xs md:text-sm leading-relaxed">{trait.desc}</p>
                       </button>
                    ))}
@@ -1404,7 +1412,7 @@ const GradStudentSimulator = () => {
                   );
               })()}
 
-              {/* 选项区域 - 增加 pb-6 防止底部遮挡 */}
+              {/* 选项区域 */}
               <div className="flex flex-col gap-2 mt-auto min-h-[260px] md:min-h-[180px] justify-end pb-6 md:pb-0">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
                     {currentEvent.choices.map((choice, idx) => (
@@ -1462,7 +1470,7 @@ const GradStudentSimulator = () => {
             </div>
           )}
 
-          {/* 阶段：事件结果 (分离滚动区与固定区) */}
+          {/* 阶段：事件结果 */}
           {phase === 'EVENT_RESULT' && resultLog && (
             <div key={animKey} className="flex-1 flex flex-col animate-pop-in pb-4">
               
@@ -1618,7 +1626,7 @@ const GradStudentSimulator = () => {
   );
 };
 
-// 历史记录单项组件
+// ... HistoryItem 和 StatCard 组件保持不变 ...
 const HistoryItem = ({ log, isMobile = false, isAnomaly = false }) => {
     const changes = Object.entries(log.statsChange).filter(([_, v]) => v !== 0);
 
@@ -1657,7 +1665,6 @@ const HistoryItem = ({ log, isMobile = false, isAnomaly = false }) => {
     );
 };
 
-// 数值卡片组件
 const StatCard = ({ icon: Icon, label, value, color, barColor, borderColor, shadow, isAnomaly }) => (
   <div className={`p-2 md:p-3 rounded-2xl border flex flex-col justify-between transition-transform duration-300 ${isAnomaly ? 'bg-slate-800 border-purple-800 shadow-none' : `bg-white ${borderColor} ${shadow}`}`}>
     <div className="flex justify-between items-center mb-1 md:mb-2">
