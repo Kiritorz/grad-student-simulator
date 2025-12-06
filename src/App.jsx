@@ -970,7 +970,7 @@ const GradStudentSimulator = () => {
                       <br /><br />
                       <span className="text-indigo-600 font-bold">现在起，每次成功毕业将补充 2 次回溯机会。</span>
                       <br />
-                      <span className="text-[10px] opacity-75">（使用方法：在事件结果页面点击“眼睛”图标回顾事件时使用）</span>
+                      <span className="text-[10px] opacity-75">（使用方法：在事件结果页面点击“眼睛”回顾事件时使用）</span>
                     </p>
                   </div>
                 )}
