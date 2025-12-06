@@ -15,6 +15,23 @@ const INITIAL_STATS_BASE = {
   knowledge: 0
 };
 
+// --- 新增：隐藏人设配置 ---
+const HIDDEN_TRAIT = {
+  id: 'hidden_chosen_one',
+  name: '事无巨细',
+  desc: '你似乎洞悉了这个世界的因果律...（探索分支超 20 条）',
+  statsDesc: '全属性小幅提升，初始自带大量知识',
+  icon: Sparkles,
+  color: 'from-fuchsia-600 to-purple-600', // 独特的紫色系
+  stats: {
+    sanity: 20,    // 基础70+20=90
+    health: 20,    // 基础70+20=90
+    research: 20,  // 初始自带科研进度
+    affinity: 10,
+    knowledge: 50  // 高额初始知识
+  }
+};
+
 // 危险等级样式配置
 const RISK_CONFIG = {
   LOW: {
@@ -139,6 +156,9 @@ const GradStudentSimulator = () => {
   });
 
   const [unlockedAchievements, setUnlockedAchievements] = useState(new Set());
+
+  // --- 新增：计算总共探索过的分支数 ---
+  const totalExploredBranches = Object.values(seenOutcomes).reduce((acc, set) => acc + set.size, 0);
 
   // 初始化加载成就
   useEffect(() => {
@@ -430,7 +450,11 @@ const GradStudentSimulator = () => {
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div>
                 <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Trophy className="text-yellow-500" /> 成就墙</h3>
-                <p className="text-xs text-slate-500 mt-1">已解锁: {unlockedAchievements.size} / {ACHIEVEMENTS_DATA.length}</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  已解锁: {unlockedAchievements.size} / {ACHIEVEMENTS_DATA.length}
+                  <span className="mx-2">|</span>
+                  <span className="text-indigo-600 font-bold">已探索分支: {totalExploredBranches}</span>
+                </p>
               </div>
               <button onClick={() => setShowAchievementModal(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={24} /></button>
             </div>
@@ -556,12 +580,16 @@ const GradStudentSimulator = () => {
                 <p className="text-slate-500 text-xs md:text-sm mt-1">不同的特质决定了你的初始属性和生存策略</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                {TRAITS.map((trait) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 md:grid-cols-2">
+                {/* 根据条件合并显示列表 */}
+                {(totalExploredBranches > 20 ? [HIDDEN_TRAIT, ...TRAITS] : TRAITS).map((trait) => (
                   <button
                     key={trait.id}
                     onClick={() => applyTrait(trait)}
-                    className="bg-white p-4 md:p-5 rounded-2xl border-2 border-slate-100 md:hover:border-indigo-300 md:hover:shadow-lg transition-all text-left group relative overflow-hidden flex flex-col h-full md:active:scale-100"
+                    // PC端隐藏人设占2列，其他占1列；移动端保持1列
+                    className={`bg-white p-4 md:p-5 rounded-2xl border-2 border-slate-100 md:hover:border-indigo-300 md:hover:shadow-lg transition-all text-left group relative overflow-hidden flex flex-col h-full md:active:scale-100 
+        ${trait.id === HIDDEN_TRAIT.id ? 'border-fuchsia-200 shadow-fuchsia-100 md:col-span-2' : 'md:col-span-1'}
+      `}
                   >
                     <div className={`absolute top-0 right-0 w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br ${trait.color} opacity-10 rounded-bl-full group-hover:scale-110 transition-transform`}></div>
                     <div className="flex items-center mb-4 w-full">
@@ -569,7 +597,7 @@ const GradStudentSimulator = () => {
                         <trait.icon size={20} />
                       </div>
                       <div className="flex flex-col justify-between self-stretch ml-3">
-                        <h3 className="font-bold text-slate-800 text-base md:text-lg leading-tight">
+                        <h3 className={`font-bold text-base md:text-lg leading-tight ${trait.id === HIDDEN_TRAIT.id ? 'text-fuchsia-700' : 'text-slate-800'}`}>
                           {trait.name}
                         </h3>
                         <p className="text-slate-500 text-xs font-medium">
